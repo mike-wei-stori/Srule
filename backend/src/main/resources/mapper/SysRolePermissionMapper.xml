@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.stori.rule.mapper.SysRolePermissionMapper">
+
+    <delete id="deleteByRoleId">
+        DELETE FROM sys_role_permission WHERE role_id = #{roleId}
+    </delete>
+
+    <select id="selectByRoleAndPermission" resultType="com.stori.rule.entity.SysRolePermission">
+        SELECT * FROM sys_role_permission WHERE role_id = #{roleId} AND permission_id = #{permissionId}
+    </select>
+
+    <select id="countByRoleAndPermission" resultType="int">
+        SELECT count(1) FROM sys_role_permission WHERE role_id = #{roleId} AND permission_id = #{permissionId}
+    </select>
+
+</mapper>
+

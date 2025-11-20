@@ -1,18 +1,19 @@
 import { PageContainer } from '@ant-design/pro-components';
-import { Access, useAccess } from '@umijs/max';
+import { Access, useAccess, useIntl } from '@umijs/max';
 import { Button } from 'antd';
 
 const AccessPage: React.FC = () => {
   const access = useAccess();
+  const intl = useIntl();
   return (
     <PageContainer
       ghost
       header={{
-        title: '权限示例',
+        title: intl.formatMessage({ id: 'pages.access.title' }),
       }}
     >
       <Access accessible={access.canSeeAdmin}>
-        <Button>只有 Admin 可以看到这个按钮</Button>
+        <Button>{intl.formatMessage({ id: 'pages.access.adminButton' })}</Button>
       </Access>
     </PageContainer>
   );

@@ -7,29 +7,73 @@ export default defineConfig({
   initialState: {},
   request: {},
   layout: {
-    title: '@umijs/max',
+    title: 'Rule Engine',
+  },
+  esbuildMinifyIIFE: true,
+  locale: {
+    default: 'zh-CN',
+    antd: true,
+    title: true,
+    baseNavigator: true,
+    baseSeparator: '-',
   },
   routes: [
     {
       path: '/',
-      redirect: '/home',
+      redirect: '/features',
     },
     {
-      name: '首页',
-      path: '/home',
-      component: './Home',
+      path: '/login',
+      component: './Login',
+      layout: false,
     },
     {
-      name: '权限演示',
-      path: '/access',
-      component: './Access',
+      path: '/oauth/callback',
+      component: './OAuthCallback',
+      layout: false,
     },
     {
-      name: ' CRUD 示例',
-      path: '/table',
-      component: './Table',
+      title: 'menu.features',
+      path: '/features',
+      component: './Feature',
+    },
+    {
+      title: 'menu.packages',
+      path: '/packages',
+      component: './RulePackage',
+    },
+    {
+      path: '/editor/:packageCode',
+      component: './RuleEditor',
+      layout: false,
+    },
+    {
+      title: 'menu.profile',
+      path: '/profile',
+      component: './Profile',
+    },
+    {
+      title: 'menu.users',
+      path: '/users',
+      component: './User',
+    },
+    {
+      title: 'menu.roles',
+      path: '/roles',
+      component: './RoleManagement',
+    },
+    {
+      title: 'menu.permissions',
+      path: '/permissions',
+      component: './PermissionManagement',
     },
   ],
+  proxy: {
+    '/api': {
+      target: 'http://localhost:8080',
+      changeOrigin: true,
+    },
+  },
   npmClient: 'npm',
 });
 

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.stori.rule.mapper.RuleDefinitionMapper">
+
+    <select id="selectByPackageId" resultType="com.stori.rule.entity.RuleDefinition">
+        SELECT * FROM rule_definition WHERE package_id = #{packageId}
+    </select>
+
+    <select id="selectOneByPackageId" resultType="com.stori.rule.entity.RuleDefinition">
+        SELECT * FROM rule_definition WHERE package_id = #{packageId} LIMIT 1
+    </select>
+
+</mapper>
+

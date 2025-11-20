@@ -1,0 +1,106 @@
+package com.stori.rule.service.impl;
+
+import com.stori.rule.entity.Feature;
+import com.stori.rule.entity.RuleDefinition;
+import com.stori.rule.entity.RulePackage;
+import com.stori.rule.entity.RuleVariable;
+import com.stori.rule.executor.FeatureExecutor;
+import com.stori.rule.executor.FeatureExecutorFactory;
+import com.stori.rule.mapper.FeatureMapper;
+import com.stori.rule.mapper.RuleDefinitionMapper;
+import com.stori.rule.mapper.RulePackageMapper;
+import com.stori.rule.mapper.RuleVariableMapper;
+import com.stori.rule.service.DroolsService;
+import org.kie.api.KieBase;
+import org.kie.api.io.ResourceType;
+import org.kie.api.runtime.KieSession;
+import org.kie.internal.utils.KieHelper;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
+@Service
+public class DroolsServiceImpl implements DroolsService {
+
+    @Autowired
+    private RulePackageMapper rulePackageMapper;
+    
+    @Autowired
+    private RuleDefinitionMapper ruleDefinitionMapper;
+
+    @Autowired
+    private RuleVariableMapper ruleVariableMapper;
+
+    @Autowired
+    private FeatureMapper featureMapper;
+
+    @Autowired
+    private FeatureExecutorFactory featureExecutorFactory;
+
+    // Cache KieBase by package code
+    private final Map<String, KieBase> kieBaseCache = new ConcurrentHashMap<>();
+
+    @Override
+    public Map<String, Object> execute(String packageCode, Map<String, Object> inputs) {
+        // 1. Load Package
+        RulePackage pkg = rulePackageMapper.selectByCode(packageCode);
+        if (pkg == null) throw new RuntimeException("Package not found");
+
+        // 2. Enrich inputs with Features
+        List<RuleVariable> variables = ruleVariableMapper.selectByPackageId(pkg.getId());
+        for (RuleVariable var : variables) {
+            if (var.getFeatureId() != null) {
+                Feature feature = featureMapper.selectById(var.getFeatureId());
+                if (feature != null) {
+                    FeatureExecutor executor = featureExecutorFactory.getExecutor(feature.getType());
+                    if (executor != null) {
+                        Object value = executor.execute(feature, inputs);
+                        inputs.put(var.getCode(), value);
+                    }
+                }
+            }
+        }
+
+        // 3. Execute Rules
+        KieBase kieBase = kieBaseCache.computeIfAbsent(packageCode, this::loadKieBase);
+        KieSession kieSession = kieBase.newKieSession();
+        
+        // Insert inputs
+        for (Map.Entry<String, Object> entry : inputs.entrySet()) {
+            kieSession.insert(entry.getValue());
+        }
+        // Also insert the map itself if rules need to access it directly
+        kieSession.insert(inputs);
+        
+        kieSession.fireAllRules();
+        kieSession.dispose();
+        
+        return inputs; // In a real app, we might extract specific results
+    }
+
+    @Override
+    public void reloadRules(String packageCode) {
+        kieBaseCache.put(packageCode, loadKieBase(packageCode));
+    }
+
+    private KieBase loadKieBase(String packageCode) {
+        RulePackage pkg = rulePackageMapper.selectByCode(packageCode);
+        if (pkg == null) {
+            throw new RuntimeException("Package not found: " + packageCode);
+        }
+
+        List<RuleDefinition> rules = ruleDefinitionMapper.selectByPackageId(pkg.getId());
+
+        KieHelper kieHelper = new KieHelper();
+        for (RuleDefinition rule : rules) {
+            if (rule.getDrlContent() != null && !rule.getDrlContent().isEmpty()) {
+                kieHelper.addContent(rule.getDrlContent(), ResourceType.DRL);
+            }
+        }
+        
+        return kieHelper.build();
+    }
+}
