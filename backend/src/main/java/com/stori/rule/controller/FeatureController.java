@@ -47,4 +47,10 @@ public class FeatureController {
     public Result<Boolean> delete(@PathVariable Long id) {
         return Result.success(featureService.removeById(id));
     }
+
+    @PostMapping("/{id}/execute")
+    @PreAuthorize("hasAuthority('FEATURE_READ')")
+    public Result<Object> execute(@PathVariable Long id, @RequestBody java.util.Map<String, Object> context) {
+        return Result.success(featureService.execute(id, context));
+    }
 }

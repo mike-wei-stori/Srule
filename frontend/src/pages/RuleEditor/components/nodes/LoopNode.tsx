@@ -18,7 +18,7 @@ const LoopNode = (props: NodeProps) => {
             const fetchVariables = async () => {
                 try {
                     const res = await getVariablesByPackage(data.packageId);
-                    setVariables(res.data || []);
+                    setVariables((res.data as any[]) || []);
                 } catch (e) {
                     // Ignore
                 }
@@ -52,33 +52,30 @@ const LoopNode = (props: NodeProps) => {
 
     return (
         <BaseNode {...props} sourceHandles={loopHandles}>
-            <Space direction="vertical" size={2} style={{ width: '100%' }}>
-                <Space size={4}>
-                    <SyncOutlined style={{ color: '#13c2c2', fontSize: 14 }} />
-                    <Text type="secondary" style={{ fontSize: 11 }}>LOOP</Text>
-                </Space>
+            <Space size={4}>
+                <SyncOutlined style={{ color: '#13c2c2', fontSize: 14 }} />
+                <Text type="secondary" style={{ fontSize: 11 }}>LOOP</Text>
+            </Space>
 
-                <Space direction="vertical" size={2} style={{ width: '100%' }} className="nodrag">
-                    <Select
-                        value={data.collectionVariable}
-                        onChange={(value) => handleDataChange({ collectionVariable: value })}
-                        placeholder="选择集合变量"
-                        style={{ width: '100%' }}
-                        size="small"
-                        bordered={false}
-                        suffixIcon={<DownOutlined style={{ fontSize: 10 }} />}
-                    >
-                        {variables.filter(v => v.type.includes('List') || v.type.includes('Array')).map(v => (
-                            <Select.Option key={v.code} value={v.code}>
-                                {v.name}
-                            </Select.Option>
-                        ))}
-                    </Select>
-                    {selectedVar && (
-                        <Tag color="cyan" style={{ fontSize: 10 }}>{selectedVar.type}</Tag>
-                    )}
-                </Space>
-
+            <Space direction="vertical" size={2} style={{ width: '100%' }} className="nodrag">
+                <Select
+                    value={data.collectionVariable}
+                    onChange={(value) => handleDataChange({ collectionVariable: value })}
+                    placeholder="选择集合变量"
+                    style={{ width: '100%' }}
+                    size="small"
+                    bordered={false}
+                    suffixIcon={<DownOutlined style={{ fontSize: 10 }} />}
+                >
+                    {variables.filter(v => v.type.includes('List') || v.type.includes('Array') || v.type === 'LIST').map(v => (
+                        <Select.Option key={v.code} value={v.code}>
+                            {v.name}
+                        </Select.Option>
+                    ))}
+                </Select>
+                {selectedVar && (
+                    <Tag color="cyan" style={{ fontSize: 10 }}>{selectedVar.type}</Tag>
+                )}
                 <div style={{ position: 'absolute', right: -10, top: '30%', fontSize: 10, color: '#13c2c2', transform: 'translate(100%, -50%)' }}>Body</div>
                 <div style={{ position: 'absolute', right: -10, top: '70%', fontSize: 10, color: '#8c8c8c', transform: 'translate(100%, -50%)' }}>End</div>
             </Space>

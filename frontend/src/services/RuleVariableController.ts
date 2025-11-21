@@ -15,6 +15,9 @@ export async function getVariablesByPackage(
 export async function createVariable(body: API.RuleVariableDTO) {
     return request<API.Result<API.RuleVariable>>('/api/variables', {
         method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
         data: body,
     });
 }
@@ -23,6 +26,9 @@ export async function createVariable(body: API.RuleVariableDTO) {
 export async function updateVariable(id: number, body: API.RuleVariableDTO) {
     return request<API.Result<API.RuleVariable>>(`/ api / variables / ${id} `, {
         method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json',
+        },
         data: body,
     });
 }

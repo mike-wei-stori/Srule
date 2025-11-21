@@ -25,6 +25,9 @@ export async function getPackage(id: number) {
 export async function createPackage(body: API.PackageDTO) {
     return request<API.Result<API.RulePackage>>('/api/packages', {
         method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
         data: body,
     });
 }
@@ -33,6 +36,9 @@ export async function createPackage(body: API.PackageDTO) {
 export async function updatePackage(id: number, body: API.PackageDTO) {
     return request<API.Result<API.RulePackage>>(`/api/packages/${id}`, {
         method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json',
+        },
         data: body,
     });
 }
@@ -55,6 +61,9 @@ export async function loadPackageGraph(packageId: number) {
 export async function savePackageGraph(body: { packageId: number; graphData: API.PackageGraphData }) {
     return request<API.Result<string>>('/api/packages/saveGraph', {
         method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
         data: body,
     });
 }
@@ -63,6 +72,9 @@ export async function savePackageGraph(body: { packageId: number; graphData: API
 export async function publishPackage(id: number, description: string) {
     return request<API.Result<string>>(`/api/packages/${id}/publish`, {
         method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
         data: { description },
     });
 }
@@ -78,6 +90,9 @@ export async function offlinePackage(id: number) {
 export async function createPackageVersion(id: number, version: string, description: string, contentJson: string) {
     return request<API.Result<API.RulePackageVersion>>(`/api/packages/${id}/versions`, {
         method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
         data: { version, description, contentJson },
     });
 }

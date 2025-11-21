@@ -1,10 +1,21 @@
 import React, { useRef, useState, useEffect } from 'react';
-import { ProTable, ActionType, ProColumns } from '@ant-design/pro-components';
-import { Button, message, Select, Popconfirm } from 'antd';
+import {
+    ProTable,
+    ActionType,
+    ProColumns,
+    DrawerForm,
+    ProFormText,
+    ProFormSelect,
+    ProFormTextArea,
+    ProFormDigit,
+    ProFormDatePicker,
+    ProFormSwitch,
+    ProFormDependency,
+} from '@ant-design/pro-components';
+import { Button, message, Popconfirm, Tag } from 'antd';
 import { PlusOutlined } from '@ant-design/icons';
-import { request, useIntl } from '@umijs/max';
+import { useIntl } from '@umijs/max';
 import { getVariablesByPackage, createVariable, updateVariable, deleteVariable } from '@/services/RuleVariableController';
-import { getFeatures } from '@/services/FeatureController';
 
 interface ParameterPanelProps {
     packageId: number;
@@ -12,86 +23,82 @@ interface ParameterPanelProps {
 
 const ParameterPanel: React.FC<ParameterPanelProps> = ({ packageId }) => {
     const actionRef = useRef<ActionType>();
-    const [features, setFeatures] = useState<API.Feature[]>([]);
+    const [drawerVisible, setDrawerVisible] = useState(false);
+    const [currentRow, setCurrentRow] = useState<API.RuleVariable | undefined>(undefined);
     const intl = useIntl();
 
-    useEffect(() => {
-        // Fetch available features
-        const fetchFeatures = async () => {
-            try {
-                const res = await getFeatures({ pageSize: 1000 }); // Get all features
-                setFeatures(res.data?.list || []);
-            } catch (e) {
-                // Ignore
-            }
-        };
-        fetchFeatures();
-    }, []);
+    const handleEdit = (record: API.RuleVariable) => {
+        setCurrentRow(record);
+        setDrawerVisible(true);
+    };
+
+    const handleAdd = () => {
+        setCurrentRow(undefined);
+        setDrawerVisible(true);
+    };
 
     const columns: ProColumns<API.RuleVariable>[] = [
         {
             title: 'Name',
             dataIndex: 'name',
-            formItemProps: {
-                rules: [{ required: true, message: 'Required' }],
-            },
+            copyable: true,
+            ellipsis: true,
         },
         {
-            title: 'Code', // Note: API.RuleVariable doesn't have 'code', check backend entity
-            dataIndex: 'name', // Using name as code for now if code is missing, or update entity
-            // Wait, API.RuleVariable has 'name', 'dataType', 'defaultValue'.
-            // Local type had 'code', 'category'.
-            // Let's check API definition again.
-            // API.RuleVariable: id, packageId, name, dataType, defaultValue, description.
-            // It seems I missed 'code' and 'category' in API definition or they don't exist in backend.
-            // Checking backend RuleVariable.java...
-            // I don't have access to backend RuleVariable.java right now but I can infer from previous local type.
-            // If backend doesn't have them, I should remove them or update backend.
-            // Assuming backend matches API definition for now.
-            // Let's use 'name' for both name and code if needed, or just 'name'.
-            // But wait, previous code had 'code' and 'category'.
-            // Let's check typings.d.ts again.
-            // interface RuleVariable { id, packageId, name, dataType, defaultValue, description }
-            // It seems 'category' (Input/Output) is missing in API definition.
-            // I should probably add it to API definition if it's important.
-            // For now, I will comment out 'code' and 'category' columns or map them to existing fields if appropriate.
-            // Actually, 'category' is likely 'variableType' or similar.
-            // Let's stick to API.RuleVariable fields for now to avoid errors.
-            // I will remove 'code' and 'category' columns for now to match API.
+            title: 'Code',
+            dataIndex: 'code',
+            copyable: true,
+            ellipsis: true,
         },
         {
             title: 'Type',
-            dataIndex: 'dataType',
+            dataIndex: 'type',
             valueType: 'select',
             valueEnum: {
-                STRING: { text: 'String' },
-                INTEGER: { text: 'Integer' },
-                DOUBLE: { text: 'Double' },
-                BOOLEAN: { text: 'Boolean' },
-                DATE: { text: 'Date' },
-                OBJECT: { text: 'Object' },
+                STRING: { text: 'String', status: 'Default' },
+                INTEGER: { text: 'Integer', status: 'Processing' },
+                DOUBLE: { text: 'Double', status: 'Processing' },
+                BOOLEAN: { text: 'Boolean', status: 'Success' },
+                DATE: { text: 'Date', status: 'Warning' },
+                OBJECT: { text: 'Object', status: 'Error' },
+                LIST: { text: 'List', status: 'Default' },
+                MAP: { text: 'Map', status: 'Default' },
             },
-            formItemProps: {
-                rules: [{ required: true, message: 'Required' }],
+        },
+        {
+            title: 'Category',
+            dataIndex: 'category',
+            valueType: 'select',
+            valueEnum: {
+                INPUT: { text: 'Input', status: 'Processing' },
+                OUTPUT: { text: 'Output', status: 'Success' },
+                INTERNAL: { text: 'Internal', status: 'Default' },
+            },
+            render: (_, record) => {
+                let color = 'default';
+                if (record.category === 'INPUT') color = 'blue';
+                if (record.category === 'OUTPUT') color = 'green';
+                return <Tag color={color}>{record.category}</Tag>;
             },
         },
         {
             title: 'Default Value',
             dataIndex: 'defaultValue',
+            ellipsis: true,
         },
         {
             title: 'Description',
             dataIndex: 'description',
+            ellipsis: true,
+            search: false,
         },
         {
             title: intl.formatMessage({ id: 'common.actions' }),
             valueType: 'option',
             render: (text, record, _, action) => [
                 <a
-                    key="editable"
-                    onClick={() => {
-                        action?.startEditable?.(record.id!);
-                    }}
+                    key="edit"
+                    onClick={() => handleEdit(record)}
                 >
                     {intl.formatMessage({ id: 'common.edit' })}
                 </a>,
@@ -104,56 +111,159 @@ const ParameterPanel: React.FC<ParameterPanelProps> = ({ packageId }) => {
                         actionRef.current?.reload();
                     }}
                 >
-                    <a>{intl.formatMessage({ id: 'common.delete' })}</a>
+                    <a style={{ color: 'red' }}>{intl.formatMessage({ id: 'common.delete' })}</a>
                 </Popconfirm>,
             ],
         },
     ];
 
     return (
-        <ProTable<API.RuleVariable>
-            headerTitle="Parameters"
-            actionRef={actionRef}
-            rowKey="id"
-            search={false}
-            toolBarRender={() => [
-                <Button
-                    type="primary"
-                    key="primary"
-                    onClick={() => {
-                        actionRef.current?.addEditRecord?.({
-                            id: Date.now(),
-                            packageId,
-                            dataType: 'STRING',
-                        } as API.RuleVariable);
-                    }}
-                >
-                    <PlusOutlined /> Add Parameter
-                </Button>,
-            ]}
-            request={async () => {
-                const res = await getVariablesByPackage(packageId);
-                return {
-                    data: (res.data as API.RuleVariable[]) || [],
-                    success: res.success,
-                };
-            }}
-            editable={{
-                type: 'multiple',
-                onSave: async (key, row) => {
-                    if (typeof row.id === 'number' && row.id > 1000000000000) {
-                        // New record
-                        const { id, ...rest } = row;
-                        await createVariable(rest as API.RuleVariableDTO);
-                    } else {
-                        // Existing record
-                        await updateVariable(row.id!, row as API.RuleVariableDTO);
+        <>
+            <ProTable<API.RuleVariable>
+                headerTitle="Parameters"
+                actionRef={actionRef}
+                rowKey="id"
+                search={false}
+                toolBarRender={() => [
+                    <Button
+                        type="primary"
+                        key="primary"
+                        onClick={handleAdd}
+                    >
+                        <PlusOutlined /> Add Parameter
+                    </Button>,
+                ]}
+                request={async () => {
+                    const res = await getVariablesByPackage(packageId);
+                    return {
+                        data: (res.data as API.RuleVariable[]) || [],
+                        success: res.success,
+                    };
+                }}
+                columns={columns}
+            />
+
+            <DrawerForm<API.RuleVariable>
+                title={currentRow ? "Edit Parameter" : "Add Parameter"}
+                width={500}
+                visible={drawerVisible}
+                onVisibleChange={setDrawerVisible}
+                initialValues={currentRow}
+                drawerProps={{
+                    destroyOnClose: true,
+                }}
+                onFinish={async (values) => {
+                    try {
+                        const data = { ...values, packageId };
+                        if (currentRow?.id) {
+                            await updateVariable(currentRow.id, data);
+                        } else {
+                            await createVariable(data);
+                        }
+                        message.success(intl.formatMessage({ id: 'common.success' }));
+                        setDrawerVisible(false);
+                        actionRef.current?.reload();
+                        return true;
+                    } catch (error) {
+                        message.error('Failed to save parameter');
+                        return false;
                     }
-                    message.success(intl.formatMessage({ id: 'common.success' }));
-                },
-            }}
-            columns={columns}
-        />
+                }}
+            >
+                <ProFormText
+                    name="name"
+                    label="Name"
+                    placeholder="e.g. userAge"
+                    rules={[{ required: true, message: 'Please enter parameter name' }]}
+                />
+                <ProFormText
+                    name="code"
+                    label="Code"
+                    placeholder="e.g. user_age"
+                    rules={[{ required: true, message: 'Please enter parameter code' }]}
+                />
+                <ProFormSelect
+                    name="category"
+                    label="Category"
+                    options={[
+                        { label: 'Input', value: 'INPUT' },
+                        { label: 'Output', value: 'OUTPUT' },
+                        { label: 'Internal', value: 'INTERNAL' },
+                    ]}
+                    rules={[{ required: true, message: 'Please select category' }]}
+                />
+                <ProFormSelect
+                    name="type"
+                    label="Type"
+                    options={[
+                        { label: 'String', value: 'STRING' },
+                        { label: 'Integer', value: 'INTEGER' },
+                        { label: 'Double', value: 'DOUBLE' },
+                        { label: 'Boolean', value: 'BOOLEAN' },
+                        { label: 'Date', value: 'DATE' },
+                        { label: 'Object', value: 'OBJECT' },
+                        { label: 'List', value: 'LIST' },
+                        { label: 'Map', value: 'MAP' },
+                    ]}
+                    rules={[{ required: true, message: 'Please select type' }]}
+                />
+
+                <ProFormDependency name={['type']}>
+                    {({ type }) => {
+                        if (type === 'BOOLEAN') {
+                            return (
+                                <ProFormSelect
+                                    name="defaultValue"
+                                    label="Default Value"
+                                    options={[
+                                        { label: 'True', value: 'true' },
+                                        { label: 'False', value: 'false' },
+                                    ]}
+                                />
+                            );
+                        }
+                        if (type === 'DATE') {
+                            return (
+                                <ProFormDatePicker
+                                    name="defaultValue"
+                                    label="Default Value"
+                                    width="xl"
+                                />
+                            );
+                        }
+                        if (type === 'INTEGER' || type === 'DOUBLE') {
+                            return (
+                                <ProFormDigit
+                                    name="defaultValue"
+                                    label="Default Value"
+                                    width="xl"
+                                />
+                            );
+                        }
+                        if (type === 'LIST' || type === 'MAP' || type === 'OBJECT') {
+                            return (
+                                <ProFormTextArea
+                                    name="defaultValue"
+                                    label="Default Value (JSON)"
+                                    placeholder="e.g. {'key': 'value'} or [1, 2, 3]"
+                                />
+                            );
+                        }
+                        return (
+                            <ProFormText
+                                name="defaultValue"
+                                label="Default Value"
+                            />
+                        );
+                    }}
+                </ProFormDependency>
+
+                <ProFormTextArea
+                    name="description"
+                    label="Description"
+                />
+            </DrawerForm>
+        </>
     );
 };
 

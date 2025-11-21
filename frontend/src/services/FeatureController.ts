@@ -25,6 +25,9 @@ export async function getFeature(id: number) {
 export async function createFeature(body: API.FeatureDTO) {
     return request<API.Result<API.Feature>>('/api/features', {
         method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
         data: body,
     });
 }
@@ -33,6 +36,9 @@ export async function createFeature(body: API.FeatureDTO) {
 export async function updateFeature(id: number, body: API.FeatureDTO) {
     return request<API.Result<API.Feature>>(`/api/features/${id}`, {
         method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json',
+        },
         data: body,
     });
 }
@@ -41,5 +47,15 @@ export async function updateFeature(id: number, body: API.FeatureDTO) {
 export async function deleteFeature(id: number) {
     return request<API.Result<string>>(`/api/features/${id}`, {
         method: 'DELETE',
+    });
+}
+/** Execute feature */
+export async function executeFeature(id: number, context: Record<string, any>) {
+    return request<API.Result<any>>(`/api/features/${id}/execute`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        data: context,
     });
 }

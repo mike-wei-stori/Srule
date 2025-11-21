@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState, useRef } from 'react';
 import ReactFlow, {
     Node,
     Edge,
@@ -75,6 +75,7 @@ const RuleEditorContent = () => {
     const [menuVisible, setMenuVisible] = useState(false);
     const [menuPosition, setMenuPosition] = useState({ x: 0, y: 0 });
     const reactFlowInstance = useReactFlow();
+    const onPasteNodeRef = useRef<() => void>(() => { });
 
     // Fetch package ID
     useEffect(() => {
@@ -169,24 +170,26 @@ const RuleEditorContent = () => {
 
     // Copy/Paste functionality
     const onCopyNode = useCallback((nodeId: string) => {
-        const node = nodes.find(n => n.id === nodeId);
+        const currentNodes = reactFlowInstance.getNodes();
+        const node = currentNodes.find(n => n.id === nodeId);
         if (node) {
             setCopiedNode(node);
             message.success(intl.formatMessage({ id: 'pages.editor.copyNode' }));
         }
-    }, [nodes]);
+    }, [reactFlowInstance]);
 
     // Validate Node Name (Rule Name)
     const validateNodeName = useCallback((name: string, nodeId: string) => {
         if (!name || !name.trim()) {
             return intl.formatMessage({ id: 'pages.editor.nameEmpty' });
         }
-        const isDuplicate = nodes.some(n => n.id !== nodeId && n.data.label === name.trim());
+        const currentNodes = reactFlowInstance.getNodes();
+        const isDuplicate = currentNodes.some(n => n.id !== nodeId && n.data.label === name.trim());
         if (isDuplicate) {
             return intl.formatMessage({ id: 'pages.editor.nameUnique' });
         }
         return null;
-    }, [nodes]);
+    }, [reactFlowInstance]);
 
     // Handle Node Data Change (Inline Editing)
     const onNodeDataChange = useCallback((id: string, newData: any) => {
@@ -207,104 +210,93 @@ const RuleEditorContent = () => {
 
     // Move node up/down
     const onMoveNode = useCallback((nodeId: string, direction: 'up' | 'down') => {
-        const node = nodes.find(n => n.id === nodeId);
+        const currentNodes = reactFlowInstance.getNodes();
+        const currentEdges = reactFlowInstance.getEdges();
+        const node = currentNodes.find(n => n.id === nodeId);
         if (!node) return;
 
-        const parentEdge = edges.find(e => e.target === nodeId);
+        const parentEdge = currentEdges.find(e => e.target === nodeId);
         if (!parentEdge) {
             message.warning(intl.formatMessage({ id: 'pages.editor.cannotMoveRoot' }));
             return;
         }
 
-        const siblingEdges = edges.filter(e => e.source === parentEdge.source && e.target !== nodeId);
-        const siblings = siblingEdges.map(e => nodes.find(n => n.id === e.target)).filter(Boolean) as Node[];
+        // Find all edges from the same parent
+        const siblingEdges = currentEdges.filter(e => e.source === parentEdge.source);
 
-        if (siblings.length === 0) {
-            message.warning(intl.formatMessage({ id: 'pages.editor.noSiblings' }));
-            return;
-        }
+        // Sort sibling edges by their current order in the array (which dictates layout order)
+        // or by some other property if we had one. But here we rely on array order.
+        // Wait, we need to find the index of our edge in the siblingEdges list.
+        const currentIndex = siblingEdges.findIndex(e => e.target === nodeId);
 
-        const allNodes = [node, ...siblings].sort((a, b) => a.position.y - b.position.y);
-        const currentIndex = allNodes.findIndex(n => n.id === nodeId);
+        if (currentIndex === -1) return;
 
         if (direction === 'up' && currentIndex === 0) {
             message.warning(intl.formatMessage({ id: 'pages.editor.alreadyTop' }));
             return;
         }
-        if (direction === 'down' && currentIndex === allNodes.length - 1) {
+        if (direction === 'down' && currentIndex === siblingEdges.length - 1) {
             message.warning(intl.formatMessage({ id: 'pages.editor.alreadyBottom' }));
             return;
         }
 
         const targetIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1;
-        const currentY = allNodes[currentIndex].position.y;
-        const targetY = allNodes[targetIndex].position.y;
 
-        setNodes((nds) =>
-            nds.map((n) => {
-                if (n.id === nodeId) {
-                    return { ...n, position: { ...n.position, y: targetY } };
-                } else if (n.id === allNodes[targetIndex].id) {
-                    return { ...n, position: { ...n.position, y: currentY } };
-                }
-                return n;
-            })
-        );
+        // Swap edges in the main edges array
+        const newEdges = [...currentEdges];
+        const edgeA = siblingEdges[currentIndex];
+        const edgeB = siblingEdges[targetIndex];
 
-        message.success(direction === 'up' ? intl.formatMessage({ id: 'pages.editor.moveUp' }) : intl.formatMessage({ id: 'pages.editor.moveDown' }));
-    }, [nodes, edges, setNodes]);
+        const indexA = newEdges.findIndex(e => e.id === edgeA.id);
+        const indexB = newEdges.findIndex(e => e.id === edgeB.id);
+
+        if (indexA !== -1 && indexB !== -1) {
+            // Swap
+            [newEdges[indexA], newEdges[indexB]] = [newEdges[indexB], newEdges[indexA]];
+
+            // Also swap labels/handles if they are decision branches to maintain logic consistency?
+            // Actually, if we just swap the order, the layout will swap their positions.
+            // But if one is True and one is False, we might want to swap their labels/handles too 
+            // if the user intends to "swap branches". 
+            // However, usually "move up/down" just means visual reordering. 
+            // But for Decision nodes, visual order IS logical order (True vs False).
+            // If we swap True and False branches visually, we should probably swap their logical meaning too?
+            // Or maybe just swap the target nodes?
+            // Let's assume visual reordering for now. But wait, our layout sorts by True/False!
+            // If we sort by True/False in layout.ts, then reordering edges here won't affect layout 
+            // UNLESS we also change the labels/handles.
+
+            // Let's check if we are children of a Decision node.
+            const parentNode = currentNodes.find(n => n.id === parentEdge.source);
+            if (parentNode && parentNode.type === 'DECISION') {
+                // Swap labels and handles
+                const tempLabel = newEdges[indexA].label;
+                const tempHandle = newEdges[indexA].sourceHandle;
+
+                newEdges[indexA] = { ...newEdges[indexA], label: newEdges[indexB].label, sourceHandle: newEdges[indexB].sourceHandle };
+                newEdges[indexB] = { ...newEdges[indexB], label: tempLabel, sourceHandle: tempHandle };
+            }
+
+            setEdges(newEdges);
+            setTimeout(() => onLayout(), 50);
+            message.success(direction === 'up' ? intl.formatMessage({ id: 'pages.editor.moveUp' }) : intl.formatMessage({ id: 'pages.editor.moveDown' }));
+        }
+    }, [reactFlowInstance, setEdges, onLayout]);
 
     // Generate Unique Node Name
     const generateNodeName = useCallback((type: string) => {
         const prefix = type.charAt(0) + type.slice(1).toLowerCase(); // e.g., "Decision", "Action"
         let index = 1;
         let name = `${prefix} ${index}`;
+        const currentNodes = reactFlowInstance.getNodes();
 
         // Check for duplicates
-        while (nodes.some(n => n.data.label === name)) {
+        while (currentNodes.some(n => n.data.label === name)) {
             index++;
             name = `${prefix} ${index}`;
         }
         return name;
-    }, [nodes]);
-
-    // Handle Paste Node
-    const onPasteNode = useCallback(() => {
-        if (!copiedNode || !packageId) return;
-
-        const newId = `node_${Date.now()}`;
-        const position = {
-            x: copiedNode.position.x + 50,
-            y: copiedNode.position.y + 50,
-        };
-
-        // For pasted nodes, we might want to keep the name or generate a new one "Copy of ..."
-        // But user asked for auto-generation on "New Node". 
-        // Let's append "Copy" for paste to be safe and unique.
-        let newLabel = `${copiedNode.data.label} Copy`;
-        let copyIndex = 1;
-        while (nodes.some(n => n.data.label === newLabel)) {
-            newLabel = `${copiedNode.data.label} Copy ${copyIndex}`;
-            copyIndex++;
-        }
-
-        const newNode: Node = {
-            ...copiedNode,
-            id: newId,
-            position,
-            data: {
-                ...copiedNode.data,
-                label: newLabel,
-                packageId,
-                onChange: onNodeDataChange,
-                validateNodeName,
-                // onMenuClick will be assigned in the effect or when creating new nodes
-            }
-        };
-
-        setNodes((nds) => nds.concat(newNode));
-        message.success(intl.formatMessage({ id: 'pages.editor.pasteNode' }));
-    }, [copiedNode, packageId, setNodes, onNodeDataChange, validateNodeName, nodes]);
+    }, [reactFlowInstance]);
 
     // Handle Menu Actions
     const onMenuClick = useCallback((action: string, parentNode: Node) => {
@@ -314,7 +306,7 @@ const RuleEditorContent = () => {
             onCopyNode(parentNode.id);
             return;
         } else if (action === 'paste') {
-            onPasteNode();
+            onPasteNodeRef.current();
             return;
         } else if (action === 'moveUp') {
             onMoveNode(parentNode.id, 'up');
@@ -385,7 +377,51 @@ const RuleEditorContent = () => {
 
             setTimeout(() => onLayout(), 50);
         }
-    }, [nodes, packageId, onNodeDataChange, setNodes, setEdges, onLayout, onCopyNode, onPasteNode, onMoveNode, edges, validateNodeName, generateNodeName]);
+    }, [packageId, onNodeDataChange, setNodes, setEdges, onLayout, onCopyNode, onMoveNode, validateNodeName, generateNodeName]);
+
+    // Handle Paste Node
+    const onPasteNode = useCallback(() => {
+        if (!copiedNode || !packageId) return;
+
+        const currentNodes = reactFlowInstance.getNodes();
+        const newId = `node_${Date.now()}`;
+        const position = {
+            x: copiedNode.position.x + 50,
+            y: copiedNode.position.y + 50,
+        };
+
+        // For pasted nodes, we might want to keep the name or generate a new one "Copy of ..."
+        // But user asked for auto-generation on "New Node". 
+        // Let's append "Copy" for paste to be safe and unique.
+        let newLabel = `${copiedNode.data.label} Copy`;
+        let copyIndex = 1;
+        while (currentNodes.some(n => n.data.label === newLabel)) {
+            newLabel = `${copiedNode.data.label} Copy ${copyIndex}`;
+            copyIndex++;
+        }
+
+        const newNode: Node = {
+            ...copiedNode,
+            id: newId,
+            position,
+            data: {
+                ...copiedNode.data,
+                label: newLabel,
+                packageId,
+                onChange: onNodeDataChange,
+                validateNodeName,
+                onMenuClick // Explicitly assign onMenuClick
+            }
+        };
+
+        setNodes((nds) => nds.concat(newNode));
+        message.success(intl.formatMessage({ id: 'pages.editor.pasteNode' }));
+    }, [copiedNode, packageId, setNodes, onNodeDataChange, validateNodeName, onMenuClick, reactFlowInstance]);
+
+    // Sync onPasteNodeRef
+    useEffect(() => {
+        onPasteNodeRef.current = onPasteNode;
+    }, [onPasteNode]);
 
     // Handle Drag and Drop
     const onDragStart = useCallback((event: React.DragEvent, nodeType: string) => {
@@ -450,8 +486,9 @@ const RuleEditorContent = () => {
     const onAddNodeFromMenu = useCallback((type: string) => {
         if (!reactFlowInstance || !packageId) return;
 
+        const currentNodes = reactFlowInstance.getNodes();
         const id = `node_${Date.now()}`;
-        const position = { x: 100 + nodes.length * 20, y: 100 + nodes.length * 20 };
+        const position = { x: 100 + currentNodes.length * 20, y: 100 + currentNodes.length * 20 };
         const label = generateNodeName(type);
 
         const newNode: Node = {
@@ -474,7 +511,7 @@ const RuleEditorContent = () => {
 
         setNodes((nds) => nds.concat(newNode));
         message.success(intl.formatMessage({ id: 'pages.editor.nodeCreated' }, { type }));
-    }, [reactFlowInstance, packageId, onNodeDataChange, onMenuClick, setNodes, validateNodeName, generateNodeName, nodes]);
+    }, [reactFlowInstance, packageId, onNodeDataChange, onMenuClick, setNodes, validateNodeName, generateNodeName]);
 
     // Update nodes with handlers when loaded
     useEffect(() => {

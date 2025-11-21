@@ -80,7 +80,7 @@ declare namespace API {
         packageId?: number;
         name?: string;
         code?: string;
-        dataType?: string;
+        type?: string;
         category?: string; // INPUT, OUTPUT, INTERNAL
         defaultValue?: string;
         description?: string;
@@ -92,6 +92,8 @@ declare namespace API {
         id: number;
         name: string;
         code: string;
+        type: string; // SQL, RPC, CONSTANT
+        config?: string; // JSON string
         description?: string;
         returnType: string;
         scriptContent?: string;
