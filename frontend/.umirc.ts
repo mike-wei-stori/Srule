@@ -70,6 +70,12 @@ export default defineConfig({
       component: './PermissionManagement',
     },
     {
+      title: 'menu.sysConfig',
+      path: '/sys/config',
+      component: './SysConfig',
+      access: 'canSeeAdmin',
+    },
+    {
       name: 'records',
       title: 'menu.records',
       path: '/records',

@@ -26,6 +26,14 @@ export default {
     'pages.packages.title': 'Rule Packages',
     'pages.editor.title': 'Rule Editor',
 
+    // SysConfig Page
+    'sysConfig.key': 'Config Key',
+    'sysConfig.value': 'Config Value',
+    'sysConfig.description': 'Description',
+    'sysConfig.updatedAt': 'Updated At',
+    'sysConfig.edit': 'Edit Config',
+    'sysConfig.new': 'New Config',
+
     // Common Actions
     'common.create': 'Create',
     'common.edit': 'Edit',

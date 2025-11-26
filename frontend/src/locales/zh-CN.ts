@@ -13,6 +13,7 @@ export default {
     'menu.records': '记录查询',
     'menu.records.features': '特征记录',
     'menu.records.rules': '规则记录',
+    'menu.sysConfig': '系统配置',
 
     // Page Titles
     'pages.login.title': '登录',
@@ -28,6 +29,14 @@ export default {
     'pages.features.title': '特征管理',
     'pages.packages.title': '规则包管理',
     'pages.editor.title': '规则编辑器',
+
+    // SysConfig Page
+    'sysConfig.key': '配置键',
+    'sysConfig.value': '配置值',
+    'sysConfig.description': '描述',
+    'sysConfig.updatedAt': '更新时间',
+    'sysConfig.edit': '编辑配置',
+    'sysConfig.new': '新建配置',
 
     // Common Actions
     'common.create': '新建',
