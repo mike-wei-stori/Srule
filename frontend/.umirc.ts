@@ -5,7 +5,9 @@ export default defineConfig({
   access: {},
   model: {},
   initialState: {},
-  request: {},
+  request: {
+    dataField: 'data',
+  },
   layout: {
     title: 'Rule Engine',
   },
@@ -66,6 +68,22 @@ export default defineConfig({
       title: 'menu.permissions',
       path: '/permissions',
       component: './PermissionManagement',
+    },
+    {
+      title: 'Records',
+      path: '/records',
+      routes: [
+        {
+          title: 'Feature Records',
+          path: '/records/features',
+          component: './Record/FeatureRecord',
+        },
+        {
+          title: 'Rule Records',
+          path: '/records/rules',
+          component: './Record/RuleRecord',
+        },
+      ],
     },
   ],
   proxy: {

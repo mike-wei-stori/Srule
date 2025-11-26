@@ -40,45 +40,68 @@ public class DroolsServiceImpl implements DroolsService {
     @Autowired
     private FeatureExecutorFactory featureExecutorFactory;
 
+    @Autowired
+    private com.stori.rule.service.AsyncRecordService asyncRecordService;
+
     // Cache KieBase by package code
     private final Map<String, KieBase> kieBaseCache = new ConcurrentHashMap<>();
 
     @Override
     public Map<String, Object> execute(String packageCode, Map<String, Object> inputs) {
-        // 1. Load Package
-        RulePackage pkg = rulePackageMapper.selectByCode(packageCode);
-        if (pkg == null) throw new RuntimeException("Package not found");
+        long startTime = System.currentTimeMillis();
+        String reqId = java.util.UUID.randomUUID().toString();
+        String status = "SUCCESS";
+        String errorMsg = null;
 
-        // 2. Enrich inputs with Features
-        List<RuleVariable> variables = ruleVariableMapper.selectByPackageId(pkg.getId());
-        for (RuleVariable var : variables) {
-            if (var.getFeatureId() != null) {
-                Feature feature = featureMapper.selectById(var.getFeatureId());
-                if (feature != null) {
-                    FeatureExecutor executor = featureExecutorFactory.getExecutor(feature.getType());
-                    if (executor != null) {
-                        Object value = executor.execute(feature, inputs);
-                        inputs.put(var.getCode(), value);
+        try {
+            // 1. Load Package
+            RulePackage pkg = rulePackageMapper.selectByCode(packageCode);
+            if (pkg == null) throw new RuntimeException("Package not found");
+
+            // 2. Enrich inputs with Features
+            List<RuleVariable> variables = ruleVariableMapper.selectByPackageId(pkg.getId());
+            for (RuleVariable var : variables) {
+                if (var.getFeatureId() != null) {
+                    Feature feature = featureMapper.selectById(var.getFeatureId());
+                    if (feature != null) {
+                        FeatureExecutor executor = featureExecutorFactory.getExecutor(feature.getType());
+                        if (executor != null) {
+                            long featureStartTime = System.currentTimeMillis();
+                            Object value = executor.execute(feature, inputs);
+                            long featureEndTime = System.currentTimeMillis();
+                            
+                            // Record feature execution
+                            asyncRecordService.recordFeature(reqId, feature.getId(), feature.getName(), value, featureEndTime - featureStartTime);
+                            
+                            inputs.put(var.getCode(), value);
+                        }
                     }
                 }
             }
-        }
 
-        // 3. Execute Rules
-        KieBase kieBase = kieBaseCache.computeIfAbsent(packageCode, this::loadKieBase);
-        KieSession kieSession = kieBase.newKieSession();
-        
-        // Insert inputs
-        for (Map.Entry<String, Object> entry : inputs.entrySet()) {
-            kieSession.insert(entry.getValue());
+            // 3. Execute Rules
+            KieBase kieBase = kieBaseCache.computeIfAbsent(packageCode, this::loadKieBase);
+            KieSession kieSession = kieBase.newKieSession();
+            
+            // Insert inputs
+            for (Map.Entry<String, Object> entry : inputs.entrySet()) {
+                kieSession.insert(entry.getValue());
+            }
+            // Also insert the map itself if rules need to access it directly
+            kieSession.insert(inputs);
+            
+            kieSession.fireAllRules();
+            kieSession.dispose();
+            
+            return inputs; // In a real app, we might extract specific results
+        } catch (Exception e) {
+            status = "FAIL";
+            errorMsg = e.getMessage();
+            throw e;
+        } finally {
+            long endTime = System.currentTimeMillis();
+            asyncRecordService.recordRuleExecution(reqId, packageCode, inputs, inputs, endTime - startTime, status, errorMsg);
         }
-        // Also insert the map itself if rules need to access it directly
-        kieSession.insert(inputs);
-        
-        kieSession.fireAllRules();
-        kieSession.dispose();
-        
-        return inputs; // In a real app, we might extract specific results
     }
 
     @Override

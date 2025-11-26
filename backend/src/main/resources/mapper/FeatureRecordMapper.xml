@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.stori.rule.mapper.FeatureRecordMapper">
+    <select id="selectPageByCondition" resultType="com.stori.rule.entity.FeatureRecord">
+        SELECT * FROM feature_record
+        <where>
+            <if test="reqId != null and reqId != ''">
+                AND req_id = #{reqId}
+            </if>
+            <if test="featureName != null and featureName != ''">
+                AND feature_name LIKE CONCAT('%', #{featureName}, '%')
+            </if>
+        </where>
+        ORDER BY created_at DESC
+    </select>
+</mapper>

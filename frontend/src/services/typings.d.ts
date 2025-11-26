@@ -195,4 +195,33 @@ declare namespace API {
         facts: Record<string, any>;
         firedRules: string[];
     }
+
+    interface Page<T> {
+        records: T[];
+        total: number;
+        size: number;
+        current: number;
+    }
+
+    interface FeatureRecord {
+        id: number;
+        reqId: string;
+        featureId: number;
+        featureName: string;
+        featureValue: string;
+        executionTimeMs: number;
+        createdAt: string;
+    }
+
+    interface RuleExecutionRecord {
+        id: number;
+        reqId: string;
+        packageCode: string;
+        inputParams: string;
+        outputResult: string;
+        executionTimeMs: number;
+        status: string;
+        errorMessage?: string;
+        createdAt: string;
+    }
 }
