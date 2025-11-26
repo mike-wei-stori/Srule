@@ -23,6 +23,14 @@ public class RuleExecutionController {
         return Result.success(droolsService.execute(packageCode, inputs));
     }
 
+    @PostMapping("/test")
+    @PreAuthorize("hasAuthority('RULE_EXECUTE')")
+    public Result<Object> test(@RequestBody Map<String, Object> payload) {
+        String packageCode = (String) payload.get("packageCode");
+        Map<String, Object> inputs = (Map<String, Object>) payload.get("inputs");
+        return Result.success(droolsService.executeDraft(packageCode, inputs));
+    }
+
     @PostMapping("/reload")
     @PreAuthorize("hasAuthority('PACKAGE_PUBLISH')")
     public Result<String> reload(@RequestParam String packageCode) {

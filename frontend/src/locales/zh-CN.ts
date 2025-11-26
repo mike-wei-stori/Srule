@@ -40,6 +40,7 @@ export default {
     'common.actions': '操作',
     'common.success': '成功',
     'common.error': '错误',
+    'common.error.network': '网络异常，请检查您的网络连接',
     'common.confirm': '确认',
     'common.submit': '提交',
     'common.back': '返回',
@@ -55,6 +56,9 @@ export default {
     'user.role': '角色',
     'user.profile': '个人资料',
     'user.logout': '退出登录',
+    'user.logout.success': '已退出登录',
+    'user.login.expired': '未登录或登录已过期，请重新登录',
+    'user.permission.denied': '权限不足：您没有访问此资源的权限',
 
     // Status
     'status.active': '激活',

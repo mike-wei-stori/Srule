@@ -20,4 +20,9 @@ public interface RulePackageVersionService extends IService<RulePackageVersion> 
      * Rollback to a specific version
      */
     void rollbackToVersion(Long packageId, Long versionId);
+
+    /**
+     * Activate a specific version
+     */
+    void activateVersion(Long packageId, Long versionId);
 }

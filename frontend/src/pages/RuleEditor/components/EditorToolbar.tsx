@@ -12,7 +12,9 @@ import {
     CopyOutlined,
     SnippetsOutlined,
     UndoOutlined,
-    RedoOutlined
+    RedoOutlined,
+    CloudUploadOutlined,
+    HistoryOutlined
 } from '@ant-design/icons';
 
 interface EditorToolbarProps {
@@ -25,6 +27,8 @@ interface EditorToolbarProps {
     onUndo: () => void;
     onRedo: () => void;
     onSave: () => void;
+    onPublish: () => void;
+    onVersions: () => void;
     toggleFullscreen: () => void;
     isFullscreen: boolean;
     canUndo: boolean;
@@ -32,6 +36,25 @@ interface EditorToolbarProps {
     hasSelection: boolean;
     hasCopiedContent: boolean;
 }
+
+const ToolbarButton = ({ disabled, icon, onClick, type = 'default', ...rest }: any) => {
+    const disabledStyle = disabled ? {
+        color: 'rgba(255, 255, 255, 0.25)',
+        borderColor: 'rgba(255, 255, 255, 0.15)',
+        backgroundColor: 'rgba(255, 255, 255, 0.05)'
+    } : {};
+
+    return (
+        <Button
+            icon={icon}
+            disabled={disabled}
+            onClick={onClick}
+            type={type}
+            style={{ ...disabledStyle }}
+            {...rest}
+        />
+    );
+};
 
 const EditorToolbar: React.FC<EditorToolbarProps> = ({
     onZoomIn,
@@ -43,6 +66,8 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({
     onUndo,
     onRedo,
     onSave,
+    onPublish,
+    onVersions,
     toggleFullscreen,
     isFullscreen,
     canUndo,
@@ -51,43 +76,52 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({
     hasCopiedContent,
 }) => {
     return (
-        <Panel position="top-right">
+        <Panel position="top-right" style={{ 
+            background: 'var(--bg-card)', 
+            padding: 8, 
+            borderRadius: 8, 
+            border: 'var(--glass-border)',
+            display: 'flex',
+            gap: 8
+        }}>
             <Space>
                 <Tooltip title="Zoom In">
-                    <Button icon={<ZoomInOutlined />} onClick={onZoomIn} />
+                    <ToolbarButton icon={<ZoomInOutlined />} onClick={onZoomIn} />
                 </Tooltip>
                 <Tooltip title="Zoom Out">
-                    <Button icon={<ZoomOutOutlined />} onClick={onZoomOut} />
+                    <ToolbarButton icon={<ZoomOutOutlined />} onClick={onZoomOut} />
                 </Tooltip>
                 <Tooltip title="Fit View">
-                    <Button icon={<CompressOutlined />} onClick={onFitView} />
+                    <ToolbarButton icon={<CompressOutlined />} onClick={onFitView} />
                 </Tooltip>
                 <Tooltip title="Auto Layout">
-                    <Button icon={<LayoutOutlined />} onClick={onLayout} />
+                    <ToolbarButton icon={<LayoutOutlined />} onClick={onLayout} />
                 </Tooltip>
                 <Tooltip title="Copy Node (Ctrl+C)">
-                    <Button 
+                    <ToolbarButton 
                         icon={<CopyOutlined />} 
                         disabled={!hasSelection} 
                         onClick={onCopy}
                     />
                 </Tooltip>
                 <Tooltip title="Paste Node (Ctrl+V)">
-                    <Button icon={<SnippetsOutlined />} disabled={!hasCopiedContent} onClick={onPasteNode} />
+                    <ToolbarButton icon={<SnippetsOutlined />} disabled={!hasCopiedContent} onClick={onPasteNode} />
                 </Tooltip>
                 <Tooltip title="Undo (Ctrl+Z)">
-                    <Button icon={<UndoOutlined />} disabled={!canUndo} onClick={onUndo} />
+                    <ToolbarButton icon={<UndoOutlined />} disabled={!canUndo} onClick={onUndo} />
                 </Tooltip>
                 <Tooltip title="Redo (Ctrl+Y)">
-                    <Button icon={<RedoOutlined />} disabled={!canRedo} onClick={onRedo} />
+                    <ToolbarButton icon={<RedoOutlined />} disabled={!canRedo} onClick={onRedo} />
                 </Tooltip>
                 <Tooltip title={isFullscreen ? "Exit Fullscreen" : "Fullscreen"}>
-                    <Button
+                    <ToolbarButton
                         icon={isFullscreen ? <FullscreenExitOutlined /> : <FullscreenOutlined />}
                         onClick={toggleFullscreen}
                     />
                 </Tooltip>
                 <Button type="primary" icon={<SaveOutlined />} onClick={onSave}>Save</Button>
+                <Button icon={<CloudUploadOutlined />} onClick={onPublish}>Publish</Button>
+                <Button icon={<HistoryOutlined />} onClick={onVersions}>Versions</Button>
             </Space>
         </Panel>
     );

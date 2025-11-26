@@ -25,12 +25,16 @@ import LoopNode from './nodes/LoopNode';
 import NodePalette from './NodePalette';
 import CanvasContextMenu from './CanvasContextMenu';
 import EditorToolbar from './EditorToolbar';
+import PublishModal from './PublishModal';
+import VersionListDrawer from './VersionListDrawer';
 
 import { getLayoutedElements } from '../utils/layout';
 import { useUndoRedo } from '../hooks/useUndoRedo';
 import { getDescendants } from '../utils/graph';
 import { useGraphOperations } from '../hooks/useGraphOperations';
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
+
+import './EditorContent.less';
 
 const nodeTypes = {
     DECISION: DecisionNode,
@@ -58,6 +62,9 @@ const EditorContent = () => {
     const [isFullscreen, setIsFullscreen] = useState(false);
     const [menuVisible, setMenuVisible] = useState(false);
     const [menuPosition, setMenuPosition] = useState({ x: 0, y: 0 });
+    const [publishVisible, setPublishVisible] = useState(false);
+    const [versionsVisible, setVersionsVisible] = useState(false);
+    const [activeVersionId, setActiveVersionId] = useState<number | undefined>(undefined);
     const reactFlowInstance = useReactFlow();
 
     const { takeSnapshot, undo, redo, canUndo, canRedo } = useUndoRedo();
@@ -113,6 +120,7 @@ const EditorContent = () => {
                 const res = await getPackages({ code: packageCode });
                 if (res.data && res.data.length > 0) {
                     setPackageId(res.data[0].id);
+                    setActiveVersionId(res.data[0].activeVersionId);
                 }
             } catch (e) {
                 message.error(intl.formatMessage({ id: 'pages.editor.loadFailed' }));
@@ -253,28 +261,32 @@ const EditorContent = () => {
         }, eds));
     }, [setEdges, reactFlowInstance, takeSnapshot]);
 
+    const getGraphData = () => {
+        const currentNodes = nodes;
+        const currentEdges = edges;
+        
+        return {
+            nodes: currentNodes.map(n => ({
+                id: n.id,
+                type: n.type,
+                data: n.data,
+                position: { x: 0, y: 0 } 
+            })),
+            edges: currentEdges.map(e => ({
+                id: e.id,
+                source: e.source,
+                target: e.target,
+                sourceHandle: e.sourceHandle,
+                label: e.label,
+                data: e.data
+            }))
+        };
+    };
+
     const onSave = async () => {
         if (!packageId) return;
         try {
-            const currentNodes = nodes; // or reactFlowInstance.getNodes()
-            const currentEdges = edges; // or reactFlowInstance.getEdges()
-            
-            const graphData = {
-                nodes: currentNodes.map(n => ({
-                    id: n.id,
-                    type: n.type,
-                    data: n.data,
-                    position: { x: 0, y: 0 } 
-                })),
-                edges: currentEdges.map(e => ({
-                    id: e.id,
-                    source: e.source,
-                    target: e.target,
-                    sourceHandle: e.sourceHandle,
-                    label: e.label,
-                    data: e.data
-                }))
-            };
+            const graphData = getGraphData();
             await savePackageGraph({
                 packageId,
                 graphData
@@ -283,6 +295,29 @@ const EditorContent = () => {
         } catch (e) {
             message.error(intl.formatMessage({ id: 'pages.editor.saveFailed' }));
         }
+    };
+
+    const onPublish = () => {
+        setPublishVisible(true);
+    };
+
+    const onVersions = () => {
+        // Refresh active version when opening drawer
+        getPackages({ code: packageCode }).then(res => {
+            if (res.data && res.data.length > 0) {
+                setActiveVersionId(res.data[0].activeVersionId);
+            }
+        });
+        setVersionsVisible(true);
+    };
+
+    const onVersionChange = () => {
+        // Refresh active version when version changed
+        getPackages({ code: packageCode }).then(res => {
+            if (res.data && res.data.length > 0) {
+                setActiveVersionId(res.data[0].activeVersionId);
+            }
+        });
     };
 
     const onUndo = useCallback(() => {
@@ -448,6 +483,7 @@ const EditorContent = () => {
                     snapToGrid={true}
                     snapGrid={[15, 15]}
                     minZoom={0.1} 
+                    attributionPosition="bottom-right"
                 >
                     <CanvasContextMenu
                         visible={menuVisible}
@@ -463,6 +499,8 @@ const EditorContent = () => {
                             backgroundColor: 'var(--bg-card)',
                             border: 'var(--glass-border)'
                         }}
+                        pannable
+                        zoomable
                     />
                     <Background color="#888" gap={16} variant={BackgroundVariant.Dots} style={{ backgroundColor: 'var(--bg-color)' }} />
                     <EditorToolbar
@@ -478,6 +516,8 @@ const EditorContent = () => {
                         onUndo={onUndo}
                         onRedo={onRedo}
                         onSave={onSave}
+                        onPublish={onPublish}
+                        onVersions={onVersions}
                         toggleFullscreen={toggleFullscreen}
                         isFullscreen={isFullscreen}
                         canUndo={canUndo}
@@ -487,6 +527,24 @@ const EditorContent = () => {
                     />
                 </ReactFlow>
             </div>
+            {packageId && (
+                <>
+                    <PublishModal
+                        visible={publishVisible}
+                        onCancel={() => setPublishVisible(false)}
+                        onSuccess={() => setVersionsVisible(true)}
+                        packageId={packageId}
+                        contentJson={JSON.stringify(getGraphData())}
+                    />
+                    <VersionListDrawer
+                        visible={versionsVisible}
+                        onClose={() => setVersionsVisible(false)}
+                        packageId={packageId}
+                        activeVersionId={activeVersionId}
+                        onVersionChange={onVersionChange}
+                    />
+                </>
+            )}
         </div>
     );
 };

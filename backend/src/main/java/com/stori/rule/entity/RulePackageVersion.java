@@ -30,6 +30,9 @@ public class RulePackageVersion {
     @Column(value = "content_json", type = "TEXT", comment = "规则图快照")
     private String contentJson;
     
+    @Column(value = "snapshot_data", type = "TEXT", comment = "执行快照(包含DRL和变量定义)")
+    private String snapshotData;
+    
     @TableField(fill = FieldFill.INSERT)
     @Column(value = "created_at", comment = "创建时间")
     private LocalDateTime createdAt;
@@ -51,6 +54,9 @@ public class RulePackageVersion {
 
     public String getContentJson() { return contentJson; }
     public void setContentJson(String contentJson) { this.contentJson = contentJson; }
+
+    public String getSnapshotData() { return snapshotData; }
+    public void setSnapshotData(String snapshotData) { this.snapshotData = snapshotData; }
 
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }

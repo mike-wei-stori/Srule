@@ -1,12 +1,13 @@
-import React from 'react';
-import { Card, Space, Typography } from 'antd';
+import React, { useState } from 'react';
+import { Card, Space, Typography, Button, Tooltip } from 'antd';
 import {
     BranchesOutlined,
-    FilterOutlined,
     ThunderboltOutlined,
     PlayCircleOutlined,
     CodeOutlined,
-    SyncOutlined
+    SyncOutlined,
+    MenuFoldOutlined,
+    MenuUnfoldOutlined
 } from '@ant-design/icons';
 import { useIntl } from '@umijs/max';
 
@@ -18,6 +19,7 @@ interface NodePaletteProps {
 
 const NodePalette: React.FC<NodePaletteProps> = ({ onDragStart }) => {
     const intl = useIntl();
+    const [collapsed, setCollapsed] = useState(true);
 
     const nodeTypes = [
         {
@@ -52,65 +54,123 @@ const NodePalette: React.FC<NodePaletteProps> = ({ onDragStart }) => {
 
     return (
         <div style={{
-            width: 240,
+            width: collapsed ? 60 : 240,
             height: '100%',
             borderRight: '1px solid var(--glass-border)',
             background: 'var(--bg-secondary)',
-            padding: 16,
-            overflowY: 'auto'
+            padding: collapsed ? 8 : 16,
+            overflowY: 'auto',
+            transition: 'width 0.3s ease',
+            position: 'relative',
+            display: 'flex',
+            flexDirection: 'column'
         }}>
-            <div style={{ marginBottom: 16 }}>
-                <Text strong style={{ fontSize: 16, color: 'var(--primary-color)' }}>
-                    <PlayCircleOutlined /> {intl.formatMessage({ id: 'pages.editor.nodePalette' })}
-                </Text>
-                <div style={{ marginTop: 8, color: 'var(--text-secondary)', fontSize: 12 }}>
-                    {intl.formatMessage({ id: 'pages.editor.dragNode' })}
-                </div>
+             <div style={{
+                position: 'absolute',
+                top: 10,
+                right: collapsed ? '50%' : 10,
+                transform: collapsed ? 'translateX(50%)' : 'none',
+                zIndex: 10
+            }}>
+                <Button
+                    type="text"
+                    icon={collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
+                    onClick={() => setCollapsed(!collapsed)}
+                    size="small"
+                    style={{ color: 'var(--text-primary)' }}
+                />
+            </div>
+
+            <div style={{ marginBottom: 16, marginTop: 48, textAlign: collapsed ? 'center' : 'left' }}>
+                {!collapsed && (
+                    <Text strong style={{ fontSize: 16, color: 'var(--primary-color)' }}>
+                        <PlayCircleOutlined /> {intl.formatMessage({ id: 'pages.editor.nodePalette' })}
+                    </Text>
+                )}
+                 {collapsed && (
+                    <Tooltip title={intl.formatMessage({ id: 'pages.editor.nodePalette' })} placement="right">
+                        <PlayCircleOutlined style={{ fontSize: 20, color: 'var(--primary-color)' }} />
+                    </Tooltip>
+                )}
+
+                {!collapsed && (
+                    <div style={{ marginTop: 8, color: 'var(--text-secondary)', fontSize: 12 }}>
+                        {intl.formatMessage({ id: 'pages.editor.dragNode' })}
+                    </div>
+                )}
             </div>
 
             <Space direction="vertical" style={{ width: '100%' }} size={12}>
                 {nodeTypes.map((node) => (
-                    <Card
-                        key={node.type}
-                        size="small"
-                        draggable
-                        onDragStart={(e) => onDragStart(e, node.type)}
-                        style={{
-                            cursor: 'grab',
-                            borderLeft: `4px solid ${node.color}`,
-                            background: 'var(--bg-card)',
-                            border: 'var(--glass-border)',
-                            transition: 'all 0.3s',
-                        }}
-                        hoverable
-                        bodyStyle={{ padding: 12 }}
-                    >
-                        <Space direction="vertical" size={4} style={{ width: '100%' }}>
-                            <Space>
-                                <span style={{ fontSize: 18, color: node.color }}>
-                                    {node.icon}
-                                </span>
-                                <Text strong style={{ color: 'var(--text-primary)' }}>{node.label}</Text>
-                            </Space>
-                            <Text type="secondary" style={{ fontSize: 12, color: 'var(--text-secondary)' }}>
-                                {node.description}
-                            </Text>
-                        </Space>
-                    </Card>
+                    <div key={node.type}>
+                        {collapsed ? (
+                            <Tooltip title={node.label} placement="right">
+                                <div
+                                    draggable
+                                    onDragStart={(e) => onDragStart(e, node.type)}
+                                    style={{
+                                        cursor: 'grab',
+                                        width: '100%',
+                                        height: 40,
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        background: 'var(--bg-card)',
+                                        border: 'var(--glass-border)',
+                                        borderLeft: `4px solid ${node.color}`,
+                                        borderRadius: 4
+                                    }}
+                                >
+                                     <span style={{ fontSize: 20, color: node.color }}>
+                                        {node.icon}
+                                    </span>
+                                </div>
+                            </Tooltip>
+                        ) : (
+                            <Card
+                                size="small"
+                                draggable
+                                onDragStart={(e) => onDragStart(e, node.type)}
+                                style={{
+                                    cursor: 'grab',
+                                    borderLeft: `4px solid ${node.color}`,
+                                    background: 'var(--bg-card)',
+                                    border: 'var(--glass-border)',
+                                    transition: 'all 0.3s',
+                                }}
+                                hoverable
+                                bodyStyle={{ padding: 12 }}
+                            >
+                                <Space direction="vertical" size={4} style={{ width: '100%' }}>
+                                    <Space>
+                                        <span style={{ fontSize: 18, color: node.color }}>
+                                            {node.icon}
+                                        </span>
+                                        <Text strong style={{ color: 'var(--text-primary)' }}>{node.label}</Text>
+                                    </Space>
+                                    <Text type="secondary" style={{ fontSize: 12, color: 'var(--text-secondary)' }}>
+                                        {node.description}
+                                    </Text>
+                                </Space>
+                            </Card>
+                        )}
+                    </div>
                 ))}
             </Space>
 
-            <div style={{
-                marginTop: 24,
-                padding: 12,
-                background: 'rgba(0, 243, 255, 0.1)',
-                borderRadius: 4,
-                border: '1px solid rgba(0, 243, 255, 0.2)'
-            }}>
-                <Text style={{ fontSize: 12, color: 'var(--primary-color)' }}>
-                    {intl.formatMessage({ id: 'pages.editor.tip' })}
-                </Text>
-            </div>
+            {!collapsed && (
+                <div style={{
+                    marginTop: 24,
+                    padding: 12,
+                    background: 'rgba(0, 243, 255, 0.1)',
+                    borderRadius: 4,
+                    border: '1px solid rgba(0, 243, 255, 0.2)'
+                }}>
+                    <Text style={{ fontSize: 12, color: 'var(--primary-color)' }}>
+                        {intl.formatMessage({ id: 'pages.editor.tip' })}
+                    </Text>
+                </div>
+            )}
         </div>
     );
 };

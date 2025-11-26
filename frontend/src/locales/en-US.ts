@@ -37,6 +37,7 @@ export default {
     'common.actions': 'Actions',
     'common.success': 'Success',
     'common.error': 'Error',
+    'common.error.network': 'Network error, please check your connection',
     'common.confirm': 'Confirm',
     'common.submit': 'Submit',
     'common.back': 'Back',
@@ -52,6 +53,9 @@ export default {
     'user.role': 'Role',
     'user.profile': 'Profile',
     'user.logout': 'Logout',
+    'user.logout.success': 'Logged out successfully',
+    'user.login.expired': 'Not logged in or session expired, please login again',
+    'user.permission.denied': 'Permission denied: You do not have access to this resource',
 
     // Status
     'status.active': 'Active',

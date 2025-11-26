@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Card, Form, Input, InputNumber, DatePicker, Switch, Button, Descriptions, Tag, Divider, message } from 'antd';
 import { request } from '@umijs/max';
 import { getVariablesByPackage } from '@/services/RuleVariableController';
-import { executeRule } from '@/services/RuleExecutionController';
+import { testRule } from '@/services/RuleExecutionController';
 import dayjs from 'dayjs';
 
 interface TestPanelProps {
@@ -44,7 +44,7 @@ const TestPanel: React.FC<TestPanelProps> = ({ packageCode, packageId }) => {
                 }
             });
 
-            const res = await executeRule({
+            const res = await testRule({
                 packageId,
                 packageCode,
                 inputs,

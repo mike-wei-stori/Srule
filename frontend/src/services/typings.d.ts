@@ -61,6 +61,7 @@ declare namespace API {
         code: string;
         description?: string;
         status: string; // DRAFT, PUBLISHED, ARCHIVED
+        activeVersionId?: number;
         version?: string;
         extensionData?: string; // JSON string
         createTime: string;

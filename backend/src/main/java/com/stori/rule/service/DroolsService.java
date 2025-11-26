@@ -4,12 +4,20 @@ import java.util.Map;
 
 public interface DroolsService {
     /**
-     * Execute rules for a given package
+     * Execute rules for a given package (Production - uses active version)
      * @param packageCode The code of the rule package
      * @param inputs Input variables
      * @return Output variables
      */
     Map<String, Object> execute(String packageCode, Map<String, Object> inputs);
+
+    /**
+     * Execute rules for a given package (Draft - uses current editing state)
+     * @param packageCode The code of the rule package
+     * @param inputs Input variables
+     * @return Output variables
+     */
+    Map<String, Object> executeDraft(String packageCode, Map<String, Object> inputs);
 
     /**
      * Reload rules for a package (recompile DRL)

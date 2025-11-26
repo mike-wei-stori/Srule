@@ -30,6 +30,9 @@ public class RulePackage {
     @Column(value = "status", length = 20, defaultValue = "DRAFT", comment = "状态: DRAFT, PUBLISHED, ARCHIVED")
     private String status;
 
+    @Column(value = "active_version_id", comment = "当前激活的版本ID")
+    private Long activeVersionId;
+
     @Column(value = "extension_data", type = "text", comment = "扩展数据(JSON)")
     private String extensionData;
     
@@ -55,6 +58,9 @@ public class RulePackage {
 
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
+
+    public Long getActiveVersionId() { return activeVersionId; }
+    public void setActiveVersionId(Long activeVersionId) { this.activeVersionId = activeVersionId; }
 
     public String getExtensionData() { return extensionData; }
     public void setExtensionData(String extensionData) { this.extensionData = extensionData; }

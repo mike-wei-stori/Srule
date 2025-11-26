@@ -55,4 +55,14 @@ public class RulePackageVersionController {
         versionService.rollbackToVersion(id, versionId);
         return Result.success(true);
     }
+
+    @PostMapping("/{id}/versions/{versionId}/activate")
+    @PreAuthorize("hasAuthority('PACKAGE_PUBLISH')")
+    public Result<Boolean> activate(
+            @PathVariable Long id,
+            @PathVariable Long versionId) {
+        
+        versionService.activateVersion(id, versionId);
+        return Result.success(true);
+    }
 }

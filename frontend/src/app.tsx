@@ -1,5 +1,5 @@
 import React from 'react';
-import { history, SelectLang } from '@umijs/max';
+import { history, SelectLang, useIntl, getIntl } from '@umijs/max';
 import { message, Dropdown } from 'antd';
 import { LogoutOutlined, UserOutlined } from '@ant-design/icons';
 
@@ -49,6 +49,7 @@ import '@/global.less';
 
 // Layout 配置
 export const layout = ({ initialState, setInitialState }: any) => {
+    const intl = useIntl();
     const theme = initialState?.theme || 'dark';
     const isDark = theme === 'dark';
 
@@ -135,7 +136,7 @@ export const layout = ({ initialState, setInitialState }: any) => {
                                 {
                                     key: 'profile',
                                     icon: <UserOutlined />,
-                                    label: '个人中心',
+                                    label: intl.formatMessage({ id: 'menu.profile', defaultMessage: '个人中心' }),
                                     onClick: () => {
                                         history.push('/profile');
                                     },
@@ -146,12 +147,12 @@ export const layout = ({ initialState, setInitialState }: any) => {
                                 {
                                     key: 'logout',
                                     icon: <LogoutOutlined />,
-                                    label: '退出登录',
+                                    label: intl.formatMessage({ id: 'user.logout', defaultMessage: '退出登录' }),
                                     danger: true,
                                     onClick: () => {
                                         localStorage.removeItem('token');
                                         setInitialState((s: any) => ({ ...s, currentUser: undefined }));
-                                        message.success('已退出登录');
+                                        message.success(intl.formatMessage({ id: 'user.logout.success', defaultMessage: '已退出登录' }));
                                         history.push('/login');
                                     },
                                 },
@@ -195,21 +196,22 @@ export const request = {
     errorConfig: {
         errorHandler: (error: any) => {
             const { response } = error;
+            const intl = getIntl();
             if (response && response.status) {
                 const { status, data } = response;
 
                 if (status === 401) {
-                    message.error('未登录或登录已过期，请重新登录');
+                    message.error(intl.formatMessage({ id: 'user.login.expired', defaultMessage: '未登录或登录已过期，请重新登录' }));
                     localStorage.removeItem('token');
                     window.location.href = '/login';
                 } else if (status === 403) {
-                    message.error('权限不足：您没有访问此资源的权限');
+                    message.error(intl.formatMessage({ id: 'user.permission.denied', defaultMessage: '权限不足：您没有访问此资源的权限' }));
                 } else {
-                    const errorText = data?.message || '请求错误';
+                    const errorText = data?.message || intl.formatMessage({ id: 'common.error', defaultMessage: '请求错误' });
                     message.error(errorText);
                 }
             } else if (!response) {
-                message.error('网络异常，请检查您的网络连接');
+                message.error(intl.formatMessage({ id: 'common.error.network', defaultMessage: '网络异常，请检查您的网络连接' }));
             }
             throw error;
         },
@@ -235,18 +237,19 @@ export const request = {
             const { data } = response;
             // Handle unified backend response structure
             if (data && typeof data === 'object' && 'code' in data) {
+                const intl = getIntl();
                 if (data.code === 200) {
                     return response;
                 } else if (data.code === 403) {
-                    message.error('权限不足：您没有访问此资源的权限');
+                    message.error(intl.formatMessage({ id: 'user.permission.denied', defaultMessage: '权限不足：您没有访问此资源的权限' }));
                     throw new Error(data.message);
                 } else if (data.code === 401) {
-                    message.error('未登录或登录已过期');
+                    message.error(intl.formatMessage({ id: 'user.login.expired', defaultMessage: '未登录或登录已过期' }));
                     localStorage.removeItem('token');
                     window.location.href = '/login';
                     throw new Error(data.message);
                 } else {
-                    message.error(data.message || '操作失败');
+                    message.error(data.message || intl.formatMessage({ id: 'common.operationFailed', defaultMessage: '操作失败' }));
                     throw new Error(data.message);
                 }
             }
