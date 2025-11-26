@@ -9,6 +9,7 @@ import com.stori.rule.mapper.RuleDefinitionMapper;
 import com.stori.rule.mapper.RulePackageMapper;
 import com.stori.rule.service.RuleConverterService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -24,7 +25,11 @@ public class RuleDefinitionController {
     @Autowired
     private RuleConverterService ruleConverterService;
 
+    @Autowired
+    private com.stori.rule.service.DroolsService droolsService;
+
     @PostMapping("/save/{packageCode}")
+    @PreAuthorize("hasAuthority('DEFINITION_SAVE')")
     public Result<RuleDefinition> saveGraph(@PathVariable String packageCode, @RequestBody GraphDto graph) {
         // Find package by code
         RulePackage rulePackage = rulePackageMapper.selectByCode(packageCode);
@@ -55,11 +60,15 @@ public class RuleDefinitionController {
         } else {
             ruleDefinitionMapper.updateById(definition);
         }
+
+        // Reload rules in engine to update cache
+        droolsService.reloadRules(packageCode);
         
         return Result.success(definition);
     }
 
     @GetMapping("/load/{packageCode}")
+    @PreAuthorize("hasAuthority('DEFINITION_READ')")
     public Result<GraphDto> loadGraph(@PathVariable String packageCode) {
         // Find package by code
         RulePackage rulePackage = rulePackageMapper.selectByCode(packageCode);

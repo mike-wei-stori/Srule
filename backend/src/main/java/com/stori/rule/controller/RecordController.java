@@ -7,6 +7,7 @@ import com.stori.rule.entity.RuleExecutionRecord;
 import com.stori.rule.service.FeatureRecordService;
 import com.stori.rule.service.RuleExecutionRecordService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -20,6 +21,7 @@ public class RecordController {
     private RuleExecutionRecordService ruleExecutionRecordService;
 
     @GetMapping("/features")
+    @PreAuthorize("hasAuthority('RECORD_READ')")
     public Result<Page<FeatureRecord>> listFeatureRecords(
             @RequestParam(defaultValue = "1") Integer current,
             @RequestParam(defaultValue = "10") Integer pageSize,
@@ -31,6 +33,7 @@ public class RecordController {
     }
 
     @GetMapping("/rules")
+    @PreAuthorize("hasAuthority('RECORD_READ')")
     public Result<Page<RuleExecutionRecord>> listRuleRecords(
             @RequestParam(defaultValue = "1") Integer current,
             @RequestParam(defaultValue = "10") Integer pageSize,
@@ -43,6 +46,7 @@ public class RecordController {
     }
 
     @GetMapping("/rules/{id}")
+    @PreAuthorize("hasAuthority('RECORD_READ')")
     public Result<RuleExecutionRecord> getRuleRecord(@PathVariable Long id) {
         return Result.success(ruleExecutionRecordService.getById(id));
     }

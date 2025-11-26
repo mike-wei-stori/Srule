@@ -8,6 +8,7 @@ import {
     CodeOutlined,
     SyncOutlined
 } from '@ant-design/icons';
+import { useIntl } from '@umijs/max';
 
 const { Text } = Typography;
 
@@ -16,34 +17,36 @@ interface NodePaletteProps {
 }
 
 const NodePalette: React.FC<NodePaletteProps> = ({ onDragStart }) => {
+    const intl = useIntl();
+
     const nodeTypes = [
         {
             type: 'DECISION',
-            label: '决策节点',
+            label: intl.formatMessage({ id: 'pages.editor.node.decision' }),
             icon: <BranchesOutlined />,
-            color: '#1890ff',
-            description: '根据变量值进行分支决策'
+            color: '#00f3ff',
+            description: intl.formatMessage({ id: 'pages.editor.node.decision.desc' })
         },
         {
             type: 'ACTION',
-            label: '动作节点',
+            label: intl.formatMessage({ id: 'pages.editor.node.action' }),
             icon: <ThunderboltOutlined />,
-            color: '#52c41a',
-            description: '执行赋值或其他操作'
+            color: '#bc13fe',
+            description: intl.formatMessage({ id: 'pages.editor.node.action.desc' })
         },
         {
             type: 'SCRIPT',
-            label: '脚本节点',
+            label: intl.formatMessage({ id: 'pages.editor.node.script' }),
             icon: <CodeOutlined />,
             color: '#722ed1',
-            description: '执行自定义脚本'
+            description: intl.formatMessage({ id: 'pages.editor.node.script.desc' })
         },
         {
             type: 'LOOP',
-            label: '循环节点',
+            label: intl.formatMessage({ id: 'pages.editor.node.loop' }),
             icon: <SyncOutlined />,
             color: '#13c2c2',
-            description: '遍历集合变量'
+            description: intl.formatMessage({ id: 'pages.editor.node.loop.desc' })
         }
     ];
 
@@ -51,17 +54,17 @@ const NodePalette: React.FC<NodePaletteProps> = ({ onDragStart }) => {
         <div style={{
             width: 240,
             height: '100%',
-            borderRight: '1px solid #f0f0f0',
-            background: '#fafafa',
+            borderRight: '1px solid var(--glass-border)',
+            background: 'var(--bg-secondary)',
             padding: 16,
             overflowY: 'auto'
         }}>
             <div style={{ marginBottom: 16 }}>
-                <Text strong style={{ fontSize: 16 }}>
-                    <PlayCircleOutlined /> 节点面板
+                <Text strong style={{ fontSize: 16, color: 'var(--primary-color)' }}>
+                    <PlayCircleOutlined /> {intl.formatMessage({ id: 'pages.editor.nodePalette' })}
                 </Text>
-                <div style={{ marginTop: 8, color: '#8c8c8c', fontSize: 12 }}>
-                    拖拽节点到画布
+                <div style={{ marginTop: 8, color: 'var(--text-secondary)', fontSize: 12 }}>
+                    {intl.formatMessage({ id: 'pages.editor.dragNode' })}
                 </div>
             </div>
 
@@ -75,6 +78,8 @@ const NodePalette: React.FC<NodePaletteProps> = ({ onDragStart }) => {
                         style={{
                             cursor: 'grab',
                             borderLeft: `4px solid ${node.color}`,
+                            background: 'var(--bg-card)',
+                            border: 'var(--glass-border)',
                             transition: 'all 0.3s',
                         }}
                         hoverable
@@ -85,9 +90,9 @@ const NodePalette: React.FC<NodePaletteProps> = ({ onDragStart }) => {
                                 <span style={{ fontSize: 18, color: node.color }}>
                                     {node.icon}
                                 </span>
-                                <Text strong>{node.label}</Text>
+                                <Text strong style={{ color: 'var(--text-primary)' }}>{node.label}</Text>
                             </Space>
-                            <Text type="secondary" style={{ fontSize: 12 }}>
+                            <Text type="secondary" style={{ fontSize: 12, color: 'var(--text-secondary)' }}>
                                 {node.description}
                             </Text>
                         </Space>
@@ -98,12 +103,12 @@ const NodePalette: React.FC<NodePaletteProps> = ({ onDragStart }) => {
             <div style={{
                 marginTop: 24,
                 padding: 12,
-                background: '#e6f7ff',
+                background: 'rgba(0, 243, 255, 0.1)',
                 borderRadius: 4,
-                border: '1px solid #91d5ff'
+                border: '1px solid rgba(0, 243, 255, 0.2)'
             }}>
-                <Text style={{ fontSize: 12, color: '#0050b3' }}>
-                    💡 提示：拖拽节点到画布上，然后右键点击节点可以查看更多操作
+                <Text style={{ fontSize: 12, color: 'var(--primary-color)' }}>
+                    {intl.formatMessage({ id: 'pages.editor.tip' })}
                 </Text>
             </div>
         </div>

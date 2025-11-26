@@ -1,7 +1,7 @@
 import dagre from 'dagre';
 import { Node, Edge, Position } from 'reactflow';
 
-const nodeWidth = 220;
+const nodeWidth = 350; // Increased to match BaseNode maxWidth
 const nodeHeight = 80;
 
 export const getLayoutedElements = (nodes: Node[], edges: Edge[], direction = 'LR') => {
@@ -13,7 +13,7 @@ export const getLayoutedElements = (nodes: Node[], edges: Edge[], direction = 'L
         rankdir: direction,
         align: 'UL', // Align nodes to the top-left to respect edge order
         ranksep: isHorizontal ? 150 : 120, // Increased vertical/rank spacing
-        nodesep: isHorizontal ? 60 : 100  // Increased horizontal/node spacing
+        nodesep: isHorizontal ? 80 : 100  // Increased horizontal/node spacing
     });
 
     // Helper to get rank of edge type

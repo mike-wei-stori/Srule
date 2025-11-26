@@ -13,7 +13,7 @@ interface CanvasContextMenuProps {
     visible: boolean;
     position: { x: number; y: number };
     onClose: () => void;
-    onPaste: () => void;
+    onPaste: (position?: { x: number; y: number }) => void;
     onAddNode: (type: string, position: { x: number; y: number }) => void;
 }
 
@@ -30,7 +30,7 @@ const CanvasContextMenu: React.FC<CanvasContextMenuProps> = ({
         e.domEvent.stopPropagation();
 
         if (e.key === 'paste') {
-            onPaste();
+            onPaste(position);
         } else if (e.key.startsWith('add_')) {
             const type = e.key.replace('add_', '');
             onAddNode(type, position);

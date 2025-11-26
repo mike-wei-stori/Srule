@@ -70,16 +70,19 @@ export default defineConfig({
       component: './PermissionManagement',
     },
     {
-      title: 'Records',
+      name: 'records',
+      title: 'menu.records',
       path: '/records',
       routes: [
         {
-          title: 'Feature Records',
+          name: 'features',
+          title: 'menu.records.features',
           path: '/records/features',
           component: './Record/FeatureRecord',
         },
         {
-          title: 'Rule Records',
+          name: 'rules',
+          title: 'menu.records.rules',
           path: '/records/rules',
           component: './Record/RuleRecord',
         },

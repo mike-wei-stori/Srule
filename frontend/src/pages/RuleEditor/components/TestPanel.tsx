@@ -45,6 +45,7 @@ const TestPanel: React.FC<TestPanelProps> = ({ packageCode, packageId }) => {
             });
 
             const res = await executeRule({
+                packageId,
                 packageCode,
                 inputs,
             });

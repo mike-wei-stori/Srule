@@ -4,6 +4,7 @@ import { Select, Input, Space, Typography, Tag } from 'antd';
 import { DownOutlined } from '@ant-design/icons';
 import { BaseNode } from './BaseNode';
 import { getVariablesByPackage } from '@/services/RuleVariableController';
+import { useIntl } from '@umijs/max';
 
 const { Text } = Typography;
 
@@ -11,6 +12,7 @@ const DecisionNode = (props: NodeProps) => {
     const { id, data } = props;
     const [variables, setVariables] = useState<any[]>([]);
     const hasFetched = React.useRef(false);
+    const intl = useIntl();
 
     useEffect(() => {
         if (data.packageId && !hasFetched.current) {
@@ -28,11 +30,46 @@ const DecisionNode = (props: NodeProps) => {
     }, [data.packageId]);
 
     const handleDataChange = (updates: any) => {
-        data.onChange(id, { ...data, ...updates });
+        if (data.onChange) {
+            data.onChange(id, { ...data, ...updates });
+        }
     };
 
     const selectedVar = variables.find(v => v.code === data.parameter);
     const logicType = data.logicType || 'CONDITION';
+
+    const handleDeleteCondition = (conditionId: string) => {
+        const newConditions = data.conditions.filter((c: any) => c.id !== conditionId);
+        handleDataChange({ conditions: newConditions });
+    };
+
+    const handleConditionChange = (conditionId: string, field: string, value: any) => {
+        const newConditions = data.conditions.map((c: any) => {
+            if (c.id === conditionId) {
+                return { ...c, [field]: value };
+            }
+            return c;
+        });
+        handleDataChange({ conditions: newConditions });
+    };
+
+    // Migration: If data.parameter exists but conditions is empty, create first condition
+    useEffect(() => {
+        // Only run migration if onChange is available to save the changes
+        if (data.onChange && data.parameter && (!data.conditions || data.conditions.length === 0)) {
+            handleDataChange({
+                conditions: [{
+                    id: `c_${Date.now()}`,
+                    parameter: data.parameter,
+                    operator: data.operator || '==',
+                    value: data.value || ''
+                }],
+                parameter: undefined, // Clear old data
+                operator: undefined,
+                value: undefined
+            });
+        }
+    }, [data.parameter, data.conditions, data.onChange]);
 
     const dualHandles = (
         <>
@@ -62,7 +99,7 @@ const DecisionNode = (props: NodeProps) => {
             {/* Header Content */}
             <Space size={4} align="center">
                 <Text style={{ fontSize: 14 }}>🔷</Text>
-                <Text strong style={{ fontSize: 12 }}>DECISION</Text>
+                <Text strong style={{ fontSize: 12 }}>{intl.formatMessage({ id: 'pages.editor.node.decision' })}</Text>
             </Space>
 
             {/* Body Content */}
@@ -70,70 +107,114 @@ const DecisionNode = (props: NodeProps) => {
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <Text type="secondary" style={{ fontSize: 10 }}>Type</Text>
                     <Select
+                        className="nodrag"
+                        popupClassName="node-dropdown"
+                        dropdownMatchSelectWidth={false}
                         value={logicType}
                         onChange={(value) => handleDataChange({ logicType: value })}
                         size="small"
                         variant="borderless"
-                        style={{ width: 70, fontSize: 10, textAlign: 'right' }}
+                        style={{ width: 120, fontSize: 10, textAlign: 'right' }}
                         options={[
-                            { label: '变量', value: 'CONDITION' },
-                            { label: '表达式', value: 'EXPRESSION' }
+                            { label: intl.formatMessage({ id: 'pages.editor.node.variable' }), value: 'CONDITION' },
+                            { label: intl.formatMessage({ id: 'pages.editor.node.expression' }), value: 'EXPRESSION' }
                         ]}
                     />
                 </div>
 
                 {logicType === 'CONDITION' ? (
                     <Space direction="vertical" size={6} style={{ width: '100%' }} className="nodrag">
-                        <Select
-                            value={data.parameter}
-                            onChange={(value) => handleDataChange({ parameter: value })}
-                            placeholder="选择变量"
-                            style={{ width: '100%' }}
-                            size="small"
-                            status={!data.parameter ? 'warning' : ''}
-                            suffixIcon={<DownOutlined style={{ fontSize: 10 }} />}
-                        >
-                            {variables.map(v => (
-                                <Select.Option key={v.code} value={v.code}>
-                                    <Space>
-                                        <span>{v.name}</span>
-                                        <Text type="secondary" style={{ fontSize: 10 }}>{v.code}</Text>
-                                    </Space>
-                                </Select.Option>
-                            ))}
-                        </Select>
-
-                        <Space.Compact style={{ width: '100%' }}>
+                        {/* Logic Toggle (AND/OR) */}
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+                            <Text style={{ fontSize: 10, color: '#888' }}>Logic:</Text>
                             <Select
-                                value={data.operator}
-                                onChange={(value) => handleDataChange({ operator: value })}
-                                placeholder="op"
-                                style={{ width: '35%' }}
+                                className="nodrag"
+                                popupClassName="node-dropdown"
+                                value={data.conditionLogic || 'AND'}
+                                onChange={(value) => handleDataChange({ conditionLogic: value })}
                                 size="small"
-                            >
-                                <Select.Option value="==">==</Select.Option>
-                                <Select.Option value="!=">!=</Select.Option>
-                                <Select.Option value=">">&gt;</Select.Option>
-                                <Select.Option value=">=">&gt;=</Select.Option>
-                                <Select.Option value="<">&lt;</Select.Option>
-                                <Select.Option value="<=">&lt;=</Select.Option>
-                            </Select>
-                            <Input
-                                value={data.value}
-                                onChange={(e) => handleDataChange({ value: e.target.value })}
-                                placeholder="值"
-                                style={{ width: '65%' }}
-                                size="small"
+                                style={{ width: 80, fontSize: 10 }}
+                                options={[
+                                    { label: 'AND', value: 'AND' },
+                                    { label: 'OR', value: 'OR' }
+                                ]}
                             />
-                        </Space.Compact>
+                        </div>
 
-                        {selectedVar && (
-                            <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-                                <Tag color="blue" style={{ fontSize: 10, margin: 0, lineHeight: '16px', padding: '0 4px' }}>
-                                    {selectedVar.type}
-                                </Tag>
-                            </div>
-                        )}
+                        {/* Conditions List */}
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                            {(data.conditions || []).map((c: any) => (
+                                <div key={c.id} style={{ display: 'flex', flexDirection: 'column', gap: 4, padding: 4, border: '1px dashed #444', borderRadius: 4 }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                        <Select
+                                            className="nodrag"
+                                            popupClassName="node-dropdown"
+                                            dropdownMatchSelectWidth={false}
+                                            value={c.parameter}
+                                            onChange={(value) => handleConditionChange(c.id, 'parameter', value)}
+                                            placeholder={intl.formatMessage({ id: 'pages.editor.node.selectVariable' })}
+                                            style={{ minWidth: 120, flex: 1 }}
+                                            size="small"
+                                            suffixIcon={<DownOutlined style={{ fontSize: 10 }} />}
+                                        >
+                                            {variables.map(v => (
+                                                <Select.Option key={v.code} value={v.code}>
+                                                    <Space>
+                                                        <span>{v.name}</span>
+                                                        <Text type="secondary" style={{ fontSize: 10 }}>{v.code}</Text>
+                                                    </Space>
+                                                </Select.Option>
+                                            ))}
+                                        </Select>
+                                        <Text
+                                            type="danger"
+                                            style={{ cursor: 'pointer', fontSize: 10 }}
+                                            onClick={() => handleDeleteCondition(c.id)}
+                                        >
+                                            ✕
+                                        </Text>
+                                    </div>
+                                    <Space.Compact style={{ width: '100%' }}>
+                                        <Select
+                                            className="nodrag"
+                                            popupClassName="node-dropdown"
+                                            dropdownMatchSelectWidth={false}
+                                            value={c.operator}
+                                            onChange={(value) => handleConditionChange(c.id, 'operator', value)}
+                                            placeholder="op"
+                                            style={{ width: 80 }}
+                                            size="small"
+                                        >
+                                            <Select.Option value="==">==</Select.Option>
+                                            <Select.Option value="!=">!=</Select.Option>
+                                            <Select.Option value=">">&gt;</Select.Option>
+                                            <Select.Option value=">=">&gt;=</Select.Option>
+                                            <Select.Option value="<">&lt;</Select.Option>
+                                            <Select.Option value="<=">&lt;=</Select.Option>
+                                            <Select.Option value="contains">contains</Select.Option>
+                                            <Select.Option value="not contains">not contains</Select.Option>
+                                            <Select.Option value="startsWith">starts with</Select.Option>
+                                            <Select.Option value="endsWith">ends with</Select.Option>
+                                            <Select.Option value="matches">matches</Select.Option>
+                                            <Select.Option value="in">in</Select.Option>
+                                            <Select.Option value="not in">not in</Select.Option>
+                                            <Select.Option value="isNull">is null</Select.Option>
+                                            <Select.Option value="isNotNull">is not null</Select.Option>
+                                        </Select>
+                                        {!['isNull', 'isNotNull'].includes(c.operator) && (
+                                            <Input
+                                                className="nodrag"
+                                                value={c.value}
+                                                onChange={(e) => handleConditionChange(c.id, 'value', e.target.value)}
+                                                placeholder="值"
+                                                style={{ minWidth: 100, flex: 1 }}
+                                                size="small"
+                                            />
+                                        )}
+                                    </Space.Compact>
+                                </div>
+                            ))}
+                        </div>
                     </Space>
                 ) : (
                     <Input.TextArea

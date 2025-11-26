@@ -22,6 +22,7 @@ const ScriptNode = (props: NodeProps) => {
                 </Space>
                 <Select
                     className="nodrag"
+                    popupClassName="node-dropdown"
                     value={data.scriptType || 'GROOVY'}
                     onChange={(value) => handleDataChange({ scriptType: value })}
                     size="small"

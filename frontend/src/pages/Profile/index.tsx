@@ -43,7 +43,7 @@ const Profile: React.FC = () => {
                         {currentUser?.nickname || '-'}
                     </Descriptions.Item>
                     <Descriptions.Item label={intl.formatMessage({ id: 'pages.profile.email' })}>
-                        {currentUser?.email || '-'}
+                        {(currentUser as any)?.phone || '-'}
                     </Descriptions.Item>
                     <Descriptions.Item label={intl.formatMessage({ id: 'pages.profile.phone' })}>
                         {currentUser?.phone || '-'}

@@ -3,6 +3,8 @@ import { Handle, Position, NodeProps } from 'reactflow';
 import { Dropdown, MenuProps, Typography, message } from 'antd';
 import { PlusOutlined, DeleteOutlined, CopyOutlined, UpOutlined, DownOutlined, EditOutlined } from '@ant-design/icons';
 
+import { useIntl } from '@umijs/max';
+
 interface BaseNodeProps extends NodeProps {
     children: React.ReactNode;
     style?: React.CSSProperties;
@@ -11,10 +13,14 @@ interface BaseNodeProps extends NodeProps {
 
 export const BaseNode = (props: BaseNodeProps) => {
     const { id, data, selected, children, style, sourceHandles } = props;
+    const intl = useIntl();
 
     const handleMenuClick = (e: any) => {
+        console.log('BaseNode handleMenuClick:', e.key, id);
         if (data.onMenuClick) {
             data.onMenuClick(e.key, id);
+        } else {
+            console.error('data.onMenuClick is undefined');
         }
     };
 
@@ -22,37 +28,35 @@ export const BaseNode = (props: BaseNodeProps) => {
         const items: MenuProps['items'] = [];
 
         if (data.type === 'DECISION') {
-            items.push({ key: 'addCondition', label: '添加条件', icon: <PlusOutlined /> });
+            items.push({ key: 'addCondition', label: intl.formatMessage({ id: 'pages.editor.node.addCondition' }), icon: <PlusOutlined /> });
         }
 
         if (['DECISION', 'ACTION'].includes(data.type)) {
             items.push({ type: 'divider' });
         }
 
-        items.push({ key: 'moveUp', label: '上移', icon: <UpOutlined /> });
-        items.push({ key: 'moveDown', label: '下移', icon: <DownOutlined /> });
+        items.push({ key: 'moveUp', label: intl.formatMessage({ id: 'pages.editor.node.moveUp' }), icon: <UpOutlined /> });
+        items.push({ key: 'moveDown', label: intl.formatMessage({ id: 'pages.editor.node.moveDown' }), icon: <DownOutlined /> });
         items.push({ type: 'divider' });
-        items.push({ key: 'copy', label: '复制', icon: <CopyOutlined /> });
-        items.push({ key: 'delete', label: '删除', icon: <DeleteOutlined />, danger: true });
+        items.push({ key: 'copy', label: intl.formatMessage({ id: 'pages.editor.node.copy' }), icon: <CopyOutlined /> });
+        items.push({ key: 'delete', label: intl.formatMessage({ id: 'pages.editor.node.delete' }), icon: <DeleteOutlined />, danger: true });
 
         return items;
     };
 
     const getBorderColor = () => {
-        if (selected) return '#1890ff';
+        if (selected) return 'var(--primary-color)';
         switch (data.type) {
-            case 'DECISION': return '#1890ff';
+            case 'DECISION': return '#00f3ff';
             case 'CONDITION': return '#fa8c16';
-            case 'ACTION': return '#52c41a';
-            default: return '#d9d9d9';
+            case 'ACTION': return '#bc13fe';
+            default: return 'var(--border-color)';
         }
     };
 
-
-
     return (
         <div style={{ position: 'relative' }}>
-            {data.type !== 'START' && <Handle type="target" position={Position.Left} style={{ width: 8, height: 8, background: '#8c8c8c' }} />}
+            {data.type !== 'START' && <Handle type="target" position={Position.Left} style={{ width: 8, height: 8, background: 'var(--primary-color)' }} />}
             <Dropdown
                 menu={{
                     items: getMenuItems(),
@@ -66,31 +70,34 @@ export const BaseNode = (props: BaseNodeProps) => {
                     }}
                     style={{
                         padding: 0,
-                        background: '#fff',
-                        border: selected ? `2px solid ${getBorderColor()}` : '1px solid #e0e0e0',
+                        background: 'var(--bg-card)',
+                        backdropFilter: 'blur(10px)',
+                        border: selected ? `2px solid ${getBorderColor()}` : `1px solid ${getBorderColor()}`,
                         borderRadius: 12,
                         cursor: 'pointer',
                         minWidth: 200,
-                        maxWidth: 300,
+                        maxWidth: 350,
+                        width: 'fit-content',
                         boxShadow: selected
-                            ? '0 0 0 4px rgba(24, 144, 255, 0.2), 0 8px 24px rgba(0,0,0,0.12)'
-                            : '0 4px 12px rgba(0,0,0,0.08)',
+                            ? 'var(--neon-glow)'
+                            : '0 4px 12px rgba(0,0,0,0.1)',
                         transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
                         transform: selected ? 'translateY(-4px)' : 'translateY(0)',
-                        overflow: 'hidden',
+                        // overflow: 'hidden', // Removed to allow dropdowns to overflow if needed
+                        color: 'var(--text-primary)',
                         ...style
                     }}
                 >
                     {/* Header */}
                     <div style={{
                         padding: '8px 16px',
-                        background: 'linear-gradient(to bottom, #fafafa, #f5f5f5)',
-                        borderBottom: '1px solid #f0f0f0',
+                        background: 'rgba(255, 255, 255, 0.05)',
+                        borderBottom: 'var(--glass-border)',
                         display: 'flex',
                         justifyContent: 'space-between',
                         alignItems: 'center'
                     }}>
-                        <div style={{ fontWeight: 500, color: '#262626', flex: 1, marginRight: 8 }}>
+                        <div style={{ fontWeight: 500, color: 'var(--primary-color)', flex: 1, marginRight: 8 }}>
                             {data.type === 'START' ? (
                                 <span>{data.label}</span>
                             ) : (
@@ -100,14 +107,6 @@ export const BaseNode = (props: BaseNodeProps) => {
                                             if (data.validateNodeName) {
                                                 const error = data.validateNodeName(val, id);
                                                 if (error) {
-                                                    // Show error and do not update
-                                                    // We need to import message from antd, but it might be better to use a callback or just let the parent handle it?
-                                                    // Since we are in a node, we can't easily access the global message instance if not imported.
-                                                    // Let's assume message is available or we just console error/alert for now, 
-                                                    // but better: The parent passed validateNodeName which returns a string.
-                                                    // We should probably trigger a UI feedback. 
-                                                    // For now, let's just NOT update if invalid.
-                                                    // Ideally we should show why.
                                                     message.error(error);
                                                     return;
                                                 }
@@ -117,8 +116,9 @@ export const BaseNode = (props: BaseNodeProps) => {
                                             }
                                         },
                                         triggerType: ['text', 'icon'],
+                                        icon: <EditOutlined style={{ color: 'var(--primary-color)' }} />
                                     }}
-                                    style={{ width: '100%' }}
+                                    style={{ width: '100%', color: 'var(--primary-color)' }}
                                     ellipsis={{ tooltip: true }}
                                 >
                                     {data.label}
@@ -129,12 +129,12 @@ export const BaseNode = (props: BaseNodeProps) => {
                     </div>
 
                     {/* Content */}
-                    <div style={{ padding: '8px 12px' }}>
+                    <div style={{ padding: '8px 12px', color: 'var(--text-primary)' }}>
                         {children && React.Children.toArray(children).slice(1)} {/* Rest of content */}
                     </div>
                 </div>
             </Dropdown>
-            {sourceHandles || <Handle type="source" position={Position.Right} style={{ width: 8, height: 8, background: '#8c8c8c' }} />}
+            {sourceHandles || <Handle type="source" position={Position.Right} style={{ width: 8, height: 8, background: 'var(--primary-color)' }} />}
         </div>
     );
 };

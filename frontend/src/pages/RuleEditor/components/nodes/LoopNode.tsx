@@ -59,6 +59,8 @@ const LoopNode = (props: NodeProps) => {
 
             <Space direction="vertical" size={2} style={{ width: '100%' }} className="nodrag">
                 <Select
+                    popupClassName="node-dropdown"
+                    dropdownMatchSelectWidth={false}
                     value={data.collectionVariable}
                     onChange={(value) => handleDataChange({ collectionVariable: value })}
                     placeholder="选择集合变量"

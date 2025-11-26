@@ -1,5 +1,5 @@
 import React from 'react';
-import { history } from '@umijs/max';
+import { history, SelectLang } from '@umijs/max';
 import { message, Dropdown } from 'antd';
 import { LogoutOutlined, UserOutlined } from '@ant-design/icons';
 
@@ -8,6 +8,7 @@ import { getProfile } from '@/services/UserController';
 // 初始化状态
 export async function getInitialState(): Promise<{
     name?: string;
+    theme?: 'dark' | 'light';
     currentUser?: {
         id?: number;
         username?: string;
@@ -17,39 +18,105 @@ export async function getInitialState(): Promise<{
     };
 }> {
     const token = localStorage.getItem('token');
+    const savedTheme = localStorage.getItem('theme') as 'dark' | 'light';
+    const theme = (savedTheme === 'light' || savedTheme === 'dark') ? savedTheme : 'dark';
+
+    // Set initial theme attribute
+    if (typeof document !== 'undefined') {
+        document.documentElement.setAttribute('data-theme', theme);
+    }
+
+    let currentUser;
     if (token) {
         try {
             const response = await getProfile();
             if (response && response.data) {
-                return {
-                    name: 'Rule Engine',
-                    currentUser: response.data
-                };
+                currentUser = response.data;
             }
         } catch (e) {
             console.error('Failed to fetch user info:', e);
         }
     }
+
     return {
-        name: 'Rule Engine'
+        name: 'Rule Engine',
+        theme,
+        currentUser
     };
 }
 
+import '@/global.less';
+
 // Layout 配置
 export const layout = ({ initialState, setInitialState }: any) => {
+    const theme = initialState?.theme || 'dark';
+    const isDark = theme === 'dark';
+
+    // Ensure data-theme attribute is updated when state changes
+    React.useEffect(() => {
+        document.documentElement.setAttribute('data-theme', theme);
+        localStorage.setItem('theme', theme);
+    }, [theme]);
+
+    const toggleTheme = () => {
+        const newTheme = isDark ? 'light' : 'dark';
+        setInitialState((s: any) => ({ ...s, theme: newTheme }));
+    };
+
     return {
         logo: 'https://gw.alipayobjects.com/zos/rmsportal/KDpgvguMpGfqaHPjicRK.svg',
-        title: 'Rule Engine',
+        title: 'Stori Rule Engine',
         menu: {
             locale: true,
         },
         layout: 'mix',
-        navTheme: 'light',
-        primaryColor: '#1890ff',
+        navTheme: isDark ? 'realDark' : 'light',
+        primaryColor: isDark ? '#00f3ff' : '#1890ff',
         fixedHeader: false,
         fixSiderbar: true,
         colorWeak: false,
         splitMenus: false,
+        token: isDark ? {
+            colorBgApp: '#050b14',
+            colorBgLayout: '#050b14',
+            colorTextAppListIconHover: 'rgba(0, 243, 255, 0.9)',
+            colorTextAppListIcon: 'rgba(255, 255, 255, 0.85)',
+            sider: {
+                colorMenuBackground: '#0a192f',
+                colorMenuItemDivider: 'rgba(255, 255, 255, 0.15)',
+                colorBgMenuItemHover: 'rgba(0, 243, 255, 0.1)',
+                colorTextMenu: '#8892b0',
+                colorTextMenuSelected: '#00f3ff',
+                colorTextMenuItemHover: '#00f3ff',
+            },
+            header: {
+                colorBgHeader: 'rgba(5, 11, 20, 0.8)',
+                colorHeaderTitle: '#e6f1ff',
+                colorTextMenu: '#e6f1ff',
+                colorTextMenuSecondary: '#8892b0',
+                colorBgMenuItemHover: 'rgba(0, 243, 255, 0.1)',
+            }
+        } : {},
+
+        actionsRender: (props: any) => {
+            if (props.isMobile) return [];
+            return [
+                <SelectLang key="SelectLang" />,
+                <div
+                    key="theme"
+                    style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        cursor: 'pointer',
+                        padding: '0 12px',
+                        fontSize: '18px'
+                    }}
+                    onClick={toggleTheme}
+                >
+                    {isDark ? '🌙' : '☀️'}
+                </div>
+            ];
+        },
 
         // 右上角头像配置
         avatarProps: {
@@ -100,8 +167,8 @@ export const layout = ({ initialState, setInitialState }: any) => {
         // 页脚配置
         footerRender: () => {
             return (
-                <div style={{ textAlign: 'center', padding: '16px 0' }}>
-                    <div>Rule Engine © 2024</div>
+                <div style={{ textAlign: 'center', padding: '16px 0', color: isDark ? '#8892b0' : '#666' }}>
+                    <div>Stori Rule Engine © 2024</div>
                 </div>
             );
         },

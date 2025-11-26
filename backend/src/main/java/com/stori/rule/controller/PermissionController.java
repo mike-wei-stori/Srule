@@ -6,6 +6,7 @@ import com.stori.rule.entity.SysRolePermission;
 import com.stori.rule.mapper.SysPermissionMapper;
 import com.stori.rule.mapper.SysRolePermissionMapper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -22,21 +23,25 @@ public class PermissionController {
     private SysRolePermissionMapper rolePermissionMapper;
 
     @GetMapping
+    @PreAuthorize("hasAuthority('PERMISSION_READ')")
     public Result<List<SysPermission>> list() {
         return Result.success(permissionMapper.selectList(null));
     }
 
     @GetMapping("/role/{roleId}")
+    @PreAuthorize("hasAuthority('PERMISSION_READ')")
     public Result<List<SysPermission>> getByRoleId(@PathVariable Long roleId) {
         return Result.success(permissionMapper.selectByRoleId(roleId));
     }
 
     @GetMapping("/user/{userId}")
+    @PreAuthorize("hasAuthority('PERMISSION_READ')")
     public Result<List<SysPermission>> getByUserId(@PathVariable Long userId) {
         return Result.success(permissionMapper.selectByUserId(userId));
     }
 
     @PostMapping("/role/{roleId}/assign")
+    @PreAuthorize("hasAuthority('PERMISSION_ASSIGN')")
     public Result<Boolean> assignPermissionsToRole(@PathVariable Long roleId, @RequestBody List<Long> permissionIds) {
         // Remove existing permissions
         rolePermissionMapper.deleteByRoleId(roleId);
@@ -52,6 +57,7 @@ public class PermissionController {
     }
 
     @GetMapping("/check")
+    @PreAuthorize("hasAuthority('PERMISSION_READ')")
     public Result<Boolean> checkPermission(@RequestParam Long userId, @RequestParam String permissionCode) {
         List<SysPermission> permissions = permissionMapper.selectByUserId(userId);
         return Result.success(permissions.stream().anyMatch(p -> p.getCode().equals(permissionCode)));

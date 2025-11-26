@@ -27,7 +27,9 @@ import {
     FullscreenOutlined,
     FullscreenExitOutlined,
     CopyOutlined,
-    SnippetsOutlined
+    SnippetsOutlined,
+    UndoOutlined,
+    RedoOutlined
 } from '@ant-design/icons';
 import { useParams, request, useIntl } from '@umijs/max';
 import { getPackages, loadPackageGraph, savePackageGraph } from '@/services/RulePackageController';
@@ -45,6 +47,8 @@ import TestPanel from './components/TestPanel';
 import NodePalette from './components/NodePalette';
 import CanvasContextMenu from './components/CanvasContextMenu';
 import { getLayoutedElements } from './utils/layout';
+import { useUndoRedo } from './hooks/useUndoRedo';
+import { getDescendants, Subgraph } from './utils/graph';
 
 const nodeTypes = {
     DECISION: DecisionNode,
@@ -70,12 +74,15 @@ const RuleEditorContent = () => {
     const [edges, setEdges, onEdgesChange] = useEdgesState([]);
     const [packageId, setPackageId] = useState<number | null>(null);
     const [isFullscreen, setIsFullscreen] = useState(false);
-    const [copiedNode, setCopiedNode] = useState<Node | null>(null);
+    const [copiedSubgraph, setCopiedSubgraph] = useState<Subgraph | null>(null);
     const [draggedNodeType, setDraggedNodeType] = useState<string | null>(null);
     const [menuVisible, setMenuVisible] = useState(false);
     const [menuPosition, setMenuPosition] = useState({ x: 0, y: 0 });
     const reactFlowInstance = useReactFlow();
-    const onPasteNodeRef = useRef<() => void>(() => { });
+    const onPasteNodeRef = useRef<(position?: { x: number; y: number }) => void>(() => { });
+
+    const { takeSnapshot, undo, redo, canUndo, canRedo } = useUndoRedo();
+    const lastDataChangeTime = useRef<number>(0);
 
     // Fetch package ID
     useEffect(() => {
@@ -105,7 +112,17 @@ const RuleEditorContent = () => {
                         res.data.edges || [],
                         'LR'
                     );
-                    setNodes(layoutedNodes);
+                    const nodesWithHandlers = layoutedNodes.map(node => ({
+                        ...node,
+                        data: {
+                            ...node.data,
+                            packageId,
+                            onChange: onNodeDataChange,
+                            onMenuClick,
+                            validateNodeName
+                        }
+                    }));
+                    setNodes(nodesWithHandlers);
                     setEdges(layoutedEdges);
 
                     setTimeout(() => {
@@ -133,15 +150,18 @@ const RuleEditorContent = () => {
 
     // Auto Layout
     const onLayout = useCallback((direction = 'LR') => {
+        takeSnapshot(nodes, edges);
+        const currentNodes = reactFlowInstance.getNodes();
+        const currentEdges = reactFlowInstance.getEdges();
         const { nodes: layoutedNodes, edges: layoutedEdges } = getLayoutedElements(
-            nodes,
-            edges,
+            currentNodes,
+            currentEdges,
             direction
         );
         setNodes([...layoutedNodes]);
         setEdges([...layoutedEdges]);
         window.requestAnimationFrame(() => reactFlowInstance.fitView());
-    }, [nodes, edges, setNodes, setEdges, reactFlowInstance]);
+    }, [reactFlowInstance, setNodes, setEdges]);
 
     // Zoom controls
     const onZoomIn = useCallback(() => {
@@ -171,9 +191,11 @@ const RuleEditorContent = () => {
     // Copy/Paste functionality
     const onCopyNode = useCallback((nodeId: string) => {
         const currentNodes = reactFlowInstance.getNodes();
-        const node = currentNodes.find(n => n.id === nodeId);
-        if (node) {
-            setCopiedNode(node);
+        const currentEdges = reactFlowInstance.getEdges();
+        const subgraph = getDescendants(nodeId, currentNodes, currentEdges);
+
+        if (subgraph.nodes.length > 0) {
+            setCopiedSubgraph(subgraph);
             message.success(intl.formatMessage({ id: 'pages.editor.copyNode' }));
         }
     }, [reactFlowInstance]);
@@ -193,15 +215,23 @@ const RuleEditorContent = () => {
 
     // Handle Node Data Change (Inline Editing)
     const onNodeDataChange = useCallback((id: string, newData: any) => {
+        const now = Date.now();
+        if (now - lastDataChangeTime.current > 1000) {
+            takeSnapshot(nodes, edges);
+        }
+        lastDataChangeTime.current = now;
+
+        console.log('onNodeDataChange called:', id, newData);
         setNodes((nds) =>
             nds.map((node) => {
                 if (node.id === id) {
+                    console.log('Updating node:', node.id, 'with new data');
                     return { ...node, data: newData };
                 }
                 return node;
             })
         );
-    }, [setNodes]);
+    }, [setNodes, nodes, edges, takeSnapshot]);
 
     // Handle Menu Actions (Defined before onPasteNode because onPasteNode uses it indirectly via onMenuClick if needed, but actually onPasteNode is independent)
     // But onMenuClick uses onCopyNode and onPasteNode, so onPasteNode must be defined before onMenuClick.
@@ -210,6 +240,7 @@ const RuleEditorContent = () => {
 
     // Move node up/down
     const onMoveNode = useCallback((nodeId: string, direction: 'up' | 'down') => {
+        takeSnapshot(nodes, edges);
         const currentNodes = reactFlowInstance.getNodes();
         const currentEdges = reactFlowInstance.getEdges();
         const node = currentNodes.find(n => n.id === nodeId);
@@ -285,7 +316,16 @@ const RuleEditorContent = () => {
 
     // Generate Unique Node Name
     const generateNodeName = useCallback((type: string) => {
-        const prefix = type.charAt(0) + type.slice(1).toLowerCase(); // e.g., "Decision", "Action"
+        let prefix = '';
+        switch (type) {
+            case 'DECISION': prefix = intl.formatMessage({ id: 'pages.editor.node.defaultName.decision' }); break;
+            case 'ACTION': prefix = intl.formatMessage({ id: 'pages.editor.node.defaultName.action' }); break;
+            case 'SCRIPT': prefix = intl.formatMessage({ id: 'pages.editor.node.defaultName.script' }); break;
+            case 'LOOP': prefix = intl.formatMessage({ id: 'pages.editor.node.defaultName.loop' }); break;
+            case 'CONDITION': prefix = intl.formatMessage({ id: 'pages.editor.node.defaultName.condition' }); break;
+            default: prefix = type.charAt(0) + type.slice(1).toLowerCase();
+        }
+
         let index = 1;
         let name = `${prefix} ${index}`;
         const currentNodes = reactFlowInstance.getNodes();
@@ -296,11 +336,18 @@ const RuleEditorContent = () => {
             name = `${prefix} ${index}`;
         }
         return name;
-    }, [reactFlowInstance]);
+    }, [reactFlowInstance, intl]);
 
     // Handle Menu Actions
-    const onMenuClick = useCallback((action: string, parentNode: Node) => {
-        if (!parentNode) return;
+    const onMenuClick = useCallback((action: string, nodeId: string) => {
+        console.log('onMenuClick triggered:', action, nodeId);
+        const currentNodes = reactFlowInstance.getNodes();
+        const parentNode = currentNodes.find(n => n.id === nodeId);
+
+        if (!parentNode) {
+            console.error('Parent node not found for ID:', nodeId);
+            return;
+        }
 
         if (action === 'copy') {
             onCopyNode(parentNode.id);
@@ -316,107 +363,175 @@ const RuleEditorContent = () => {
             return;
         }
 
+        takeSnapshot(nodes, edges);
+
         const newId = `node_${Date.now()}`;
         let newNode: Node | null = null;
 
-        if (action === 'addCondition') {
-            const label = generateNodeName('CONDITION');
-            newNode = {
-                id: newId,
-                type: 'CONDITION',
-                data: { label, type: 'CONDITION', operator: '==', value: '', packageId, onChange: onNodeDataChange, onMenuClick, validateNodeName },
-                position: { x: parentNode.position.x + 250, y: parentNode.position.y },
-            };
-        } else if (action === 'addDecision' || action === 'addSubDecision') {
-            const label = generateNodeName('DECISION');
-            newNode = {
-                id: newId,
-                type: 'DECISION',
-                data: { label, type: 'DECISION', parameter: '', packageId, onChange: onNodeDataChange, onMenuClick, validateNodeName },
-                position: { x: parentNode.position.x + 250, y: parentNode.position.y },
-            };
-        } else if (action === 'addAction') {
-            const label = generateNodeName('ACTION');
-            newNode = {
-                id: newId,
-                type: 'ACTION',
-                data: { label, type: 'ACTION', targetParameter: '', assignmentValue: '', packageId, onChange: onNodeDataChange, onMenuClick, validateNodeName },
-                position: { x: parentNode.position.x + 250, y: parentNode.position.y },
-            };
-        } else if (action === 'addScript') {
-            const label = generateNodeName('SCRIPT');
-            newNode = {
-                id: newId,
-                type: 'SCRIPT',
-                data: { label, type: 'SCRIPT', scriptType: 'GROOVY', scriptContent: '', packageId, onChange: onNodeDataChange, onMenuClick, validateNodeName },
-                position: { x: parentNode.position.x + 250, y: parentNode.position.y },
-            };
-        } else if (action === 'addLoop') {
-            const label = generateNodeName('LOOP');
-            newNode = {
-                id: newId,
-                type: 'LOOP',
-                data: { label, type: 'LOOP', collectionVariable: '', packageId, onChange: onNodeDataChange, onMenuClick, validateNodeName },
-                position: { x: parentNode.position.x + 250, y: parentNode.position.y },
-            };
-        } else if (action === 'delete') {
-            setNodes((nds) => nds.filter((node) => node.id !== parentNode.id));
-            setEdges((eds) => eds.filter((edge) => edge.source !== parentNode.id && edge.target !== parentNode.id));
-        }
+        try {
+            if (action === 'addCondition') {
+                // If parent is a DECISION node, add a condition row to it
+                if (parentNode.type === 'DECISION') {
+                    console.log('Adding condition to Decision Node:', parentNode.id);
+                    const currentConditions = parentNode.data.conditions || [];
+                    console.log('Current conditions:', currentConditions);
 
-        if (newNode) {
-            setNodes((nds) => nds.concat(newNode!));
-            setEdges((eds) => eds.concat({
-                id: `e${parentNode.id}-${newId}`,
-                source: parentNode.id,
-                target: newId,
-                type: 'smoothstep',
-                label: action === 'addCondition' || action === 'addDecision' || action === 'addSubDecision' ? 'True' : undefined,
-                markerEnd: { type: MarkerType.ArrowClosed },
-            }));
+                    // Migration: If no conditions yet, convert existing single condition to first condition
+                    let newConditions = [...currentConditions];
+                    if (currentConditions.length === 0 && parentNode.data.parameter) {
+                        newConditions.push({
+                            id: 'true', // Keep 'true' ID for backward compatibility with existing edges
+                            parameter: parentNode.data.parameter,
+                            operator: parentNode.data.operator || '==',
+                            value: parentNode.data.value || ''
+                        });
+                    }
 
-            setTimeout(() => onLayout(), 50);
+                    // Add new condition
+                    const newCondition = {
+                        id: `c_${Date.now()}`,
+                        parameter: '', // User must select parameter
+                        operator: '==',
+                        value: ''
+                    };
+                    newConditions.push(newCondition);
+                    console.log('New conditions list:', newConditions);
+
+                    onNodeDataChange(parentNode.id, { ...parentNode.data, conditions: newConditions });
+                    message.success(intl.formatMessage({ id: 'pages.editor.node.addCondition' }));
+                    return; // Stop here, don't create new node
+                }
+
+                // Fallback for other nodes (if any)
+                const label = generateNodeName('CONDITION');
+                newNode = {
+                    id: newId,
+                    type: 'CONDITION',
+                    data: { label, type: 'CONDITION', operator: '==', value: '', packageId, onChange: onNodeDataChange, onMenuClick, validateNodeName },
+                    position: { x: parentNode.position.x + 250, y: parentNode.position.y },
+                };
+            } else if (action === 'addDecision' || action === 'addSubDecision') {
+                const label = generateNodeName('DECISION');
+                newNode = {
+                    id: newId,
+                    type: 'DECISION',
+                    data: { label, type: 'DECISION', parameter: '', packageId, onChange: onNodeDataChange, onMenuClick, validateNodeName },
+                    position: { x: parentNode.position.x + 250, y: parentNode.position.y },
+                };
+            } else if (action === 'addAction') {
+                const label = generateNodeName('ACTION');
+                newNode = {
+                    id: newId,
+                    type: 'ACTION',
+                    data: { label, type: 'ACTION', targetParameter: '', assignmentValue: '', packageId, onChange: onNodeDataChange, onMenuClick, validateNodeName },
+                    position: { x: parentNode.position.x + 250, y: parentNode.position.y },
+                };
+            } else if (action === 'addScript') {
+                const label = generateNodeName('SCRIPT');
+                newNode = {
+                    id: newId,
+                    type: 'SCRIPT',
+                    data: { label, type: 'SCRIPT', scriptType: 'GROOVY', scriptContent: '', packageId, onChange: onNodeDataChange, onMenuClick, validateNodeName },
+                    position: { x: parentNode.position.x + 250, y: parentNode.position.y },
+                };
+            } else if (action === 'addLoop') {
+                const label = generateNodeName('LOOP');
+                newNode = {
+                    id: newId,
+                    type: 'LOOP',
+                    data: { label, type: 'LOOP', collectionVariable: '', packageId, onChange: onNodeDataChange, onMenuClick, validateNodeName },
+                    position: { x: parentNode.position.x + 250, y: parentNode.position.y },
+                };
+            } else if (action === 'delete') {
+                setNodes((nds) => nds.filter((node) => node.id !== parentNode.id));
+                setEdges((eds) => eds.filter((edge) => edge.source !== parentNode.id && edge.target !== parentNode.id));
+            }
+
+            if (newNode) {
+                setNodes((nds) => nds.concat(newNode!));
+                setEdges((eds) => eds.concat({
+                    id: `e${parentNode.id}-${newId}`,
+                    source: parentNode.id,
+                    target: newId,
+                    type: 'smoothstep',
+                    label: action === 'addCondition' || action === 'addDecision' || action === 'addSubDecision' ? 'True' : undefined,
+                    markerEnd: { type: MarkerType.ArrowClosed },
+                }));
+
+                setTimeout(() => onLayout(), 50);
+            }
+        } catch (e) {
+            console.error('Error in onMenuClick:', e);
+            message.error('Operation failed');
         }
-    }, [packageId, onNodeDataChange, setNodes, setEdges, onLayout, onCopyNode, onMoveNode, validateNodeName, generateNodeName]);
+    }, [packageId, onNodeDataChange, setNodes, setEdges, onLayout, onCopyNode, onMoveNode, validateNodeName, generateNodeName, reactFlowInstance]);
 
     // Handle Paste Node
-    const onPasteNode = useCallback(() => {
-        if (!copiedNode || !packageId) return;
+    const onPasteNode = useCallback((position?: { x: number; y: number }) => {
+        if (!copiedSubgraph || !packageId) return;
+        takeSnapshot(nodes, edges);
 
         const currentNodes = reactFlowInstance.getNodes();
-        const newId = `node_${Date.now()}`;
-        const position = {
-            x: copiedNode.position.x + 50,
-            y: copiedNode.position.y + 50,
-        };
 
-        // For pasted nodes, we might want to keep the name or generate a new one "Copy of ..."
-        // But user asked for auto-generation on "New Node". 
-        // Let's append "Copy" for paste to be safe and unique.
-        let newLabel = `${copiedNode.data.label} Copy`;
-        let copyIndex = 1;
-        while (currentNodes.some(n => n.data.label === newLabel)) {
-            newLabel = `${copiedNode.data.label} Copy ${copyIndex}`;
-            copyIndex++;
+        // Calculate offset
+        let offsetX = 50;
+        let offsetY = 50;
+
+        const rootNode = copiedSubgraph.nodes[0]; // First node is the root due to BFS in getDescendants
+
+        if (position) {
+            const flowPos = reactFlowInstance.screenToFlowPosition(position);
+            offsetX = flowPos.x - rootNode.position.x;
+            offsetY = flowPos.y - rootNode.position.y;
         }
 
-        const newNode: Node = {
-            ...copiedNode,
-            id: newId,
-            position,
-            data: {
-                ...copiedNode.data,
-                label: newLabel,
-                packageId,
-                onChange: onNodeDataChange,
-                validateNodeName,
-                onMenuClick // Explicitly assign onMenuClick
-            }
-        };
+        const idMapping = new Map<string, string>();
 
-        setNodes((nds) => nds.concat(newNode));
+        // Create new nodes
+        const newNodes = copiedSubgraph.nodes.map(node => {
+            const newId = `node_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+            idMapping.set(node.id, newId);
+
+            let newLabel = node.data.label;
+            // Only append "Copy" if we are pasting without a specific position (e.g. keyboard shortcut)
+            // or if we want to be explicit. Let's keep it simple and just ensure uniqueness if needed,
+            // but for deep copy usually we want to preserve names or just append Copy to root.
+            if (node.id === rootNode.id) {
+                newLabel = `${node.data.label} Copy`;
+            }
+
+            return {
+                ...node,
+                id: newId,
+                position: {
+                    x: node.position.x + offsetX,
+                    y: node.position.y + offsetY
+                },
+                data: {
+                    ...node.data,
+                    label: newLabel,
+                    packageId,
+                    onChange: onNodeDataChange,
+                    validateNodeName,
+                    onMenuClick
+                },
+                selected: false
+            };
+        });
+
+        // Create new edges
+        const newEdges = copiedSubgraph.edges.map(edge => ({
+            ...edge,
+            id: `e${idMapping.get(edge.source)}-${idMapping.get(edge.target)}`,
+            source: idMapping.get(edge.source)!,
+            target: idMapping.get(edge.target)!,
+            selected: false
+        }));
+
+        setNodes((nds) => nds.concat(newNodes));
+        setEdges((eds) => eds.concat(newEdges));
         message.success(intl.formatMessage({ id: 'pages.editor.pasteNode' }));
-    }, [copiedNode, packageId, setNodes, onNodeDataChange, validateNodeName, onMenuClick, reactFlowInstance]);
+    }, [copiedSubgraph, packageId, setNodes, setEdges, onNodeDataChange, validateNodeName, onMenuClick, reactFlowInstance, takeSnapshot]);
 
     // Sync onPasteNodeRef
     useEffect(() => {
@@ -441,6 +556,8 @@ const RuleEditorContent = () => {
             if (!draggedNodeType || !reactFlowInstance || !packageId) {
                 return;
             }
+
+            takeSnapshot(nodes, edges);
 
             const position = reactFlowInstance.screenToFlowPosition({
                 x: event.clientX,
@@ -486,6 +603,8 @@ const RuleEditorContent = () => {
     const onAddNodeFromMenu = useCallback((type: string) => {
         if (!reactFlowInstance || !packageId) return;
 
+        takeSnapshot(nodes, edges);
+
         const currentNodes = reactFlowInstance.getNodes();
         const id = `node_${Date.now()}`;
         const position = { x: 100 + currentNodes.length * 20, y: 100 + currentNodes.length * 20 };
@@ -513,7 +632,7 @@ const RuleEditorContent = () => {
         message.success(intl.formatMessage({ id: 'pages.editor.nodeCreated' }, { type }));
     }, [reactFlowInstance, packageId, onNodeDataChange, onMenuClick, setNodes, validateNodeName, generateNodeName]);
 
-    // Update nodes with handlers when loaded
+    // Update nodes with handlers when loaded or when handlers change
     useEffect(() => {
         setNodes((nds) => nds.map(node => ({
             ...node,
@@ -528,6 +647,7 @@ const RuleEditorContent = () => {
     }, [packageId, onNodeDataChange, onMenuClick, setNodes, validateNodeName]);
 
     const onConnect = useCallback((params: Connection) => {
+        takeSnapshot(nodes, edges);
         const sourceNode = nodes.find(n => n.id === params.source);
         let label = '';
 
@@ -581,17 +701,85 @@ const RuleEditorContent = () => {
         }
     };
 
+    const onUndo = useCallback(() => {
+        const result = undo(nodes, edges);
+        if (result) {
+            setNodes(result.nodes);
+            setEdges(result.edges);
+        }
+    }, [undo, nodes, edges, setNodes, setEdges]);
+
+    const onRedo = useCallback(() => {
+        const result = redo(nodes, edges);
+        if (result) {
+            setNodes(result.nodes);
+            setEdges(result.edges);
+        }
+    }, [redo, nodes, edges, setNodes, setEdges]);
+
+    const onNodesChangeWrapped = useCallback((changes: any) => {
+        if (changes.some((c: any) => c.type === 'remove')) {
+            takeSnapshot(nodes, edges);
+        }
+        onNodesChange(changes);
+    }, [nodes, edges, onNodesChange, takeSnapshot]);
+
+    const onEdgesChangeWrapped = useCallback((changes: any) => {
+        if (changes.some((c: any) => c.type === 'remove')) {
+            takeSnapshot(nodes, edges);
+        }
+        onEdgesChange(changes);
+    }, [nodes, edges, onEdgesChange, takeSnapshot]);
+
+    const onNodeDrag = useCallback((event: React.MouseEvent, node: Node, nodes: Node[]) => {
+        // ReactFlow handles the dragged node's position update automatically in the UI,
+        // but we need to update its descendants.
+        // Wait, ReactFlow's onNodeDrag gives us the node *being dragged*.
+        // But we need to calculate the delta and apply it to descendants.
+        // Actually, onNodeDrag is called repeatedly. 
+        // A better approach for "Group Drag" is to select all descendants when drag starts?
+        // No, user wants to drag parent and have children follow.
+
+        // If we use onNodeDrag, we need to know the delta.
+        // We can store the previous position.
+    }, []);
+
+    // Better approach: On Drag Start, find descendants. On Drag, update them.
+    // But ReactFlow's onNodeDrag doesn't give delta easily without tracking.
+    // Alternative: When a node is dragged, we can programmatically update the position of its descendants.
+
+    // Let's use onNodeDrag from ReactFlow
+    const onNodeDragHandler = useCallback((event: React.MouseEvent, node: Node) => {
+        // We need the delta. 
+        // But we can't easily get delta from just one call without state.
+        // However, if we select all descendants on drag start, ReactFlow moves them all!
+        // This is the easiest way to implement "Group Drag".
+    }, []);
+
+    const onNodeDragStart = useCallback((event: React.MouseEvent, node: Node) => {
+        takeSnapshot(nodes, edges);
+
+        // Select all descendants so they move together
+        const subgraph = getDescendants(node.id, nodes, edges);
+        const descendantIds = new Set(subgraph.nodes.map(n => n.id));
+
+        setNodes(nds => nds.map(n => ({
+            ...n,
+            selected: descendantIds.has(n.id) || n.selected
+        })));
+    }, [nodes, edges, takeSnapshot, setNodes]);
+
     // Keyboard shortcuts
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
-            if ((e.ctrlKey || e.metaKey) && ['s', 'l', 'd', 'c', 'v'].includes(e.key)) {
+            if ((e.ctrlKey || e.metaKey) && ['s', 'l', 'd', 'c', 'v', 'z', 'y'].includes(e.key)) {
                 e.preventDefault();
             }
 
             if ((e.key === 'Delete' || e.key === 'Backspace') && !['INPUT', 'TEXTAREA'].includes((e.target as HTMLElement).tagName)) {
                 const selected = nodes.find(n => n.selected);
                 if (selected && selected.type !== 'START') {
-                    onMenuClick('delete', selected);
+                    onMenuClick('delete', selected.id);
                 }
             }
 
@@ -622,6 +810,18 @@ const RuleEditorContent = () => {
                 onPasteNode();
             }
 
+            if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
+                if (e.shiftKey) {
+                    onRedo();
+                } else {
+                    onUndo();
+                }
+            }
+
+            if ((e.ctrlKey || e.metaKey) && e.key === 'y') {
+                onRedo();
+            }
+
             if (e.key === 'Escape') {
                 setNodes((nds) => nds.map(n => ({ ...n, selected: false })));
             }
@@ -647,10 +847,11 @@ const RuleEditorContent = () => {
                 <ReactFlow
                     nodes={nodes}
                     edges={edges}
-                    onNodesChange={onNodesChange}
-                    onEdgesChange={onEdgesChange}
+                    onNodesChange={onNodesChangeWrapped}
+                    onEdgesChange={onEdgesChangeWrapped}
                     onConnect={onConnect}
                     onPaneContextMenu={onPaneContextMenu}
+                    onNodeDragStart={onNodeDragStart}
                     onPaneClick={onPaneClick}
                     nodeTypes={nodeTypes}
                     fitView
@@ -668,11 +869,11 @@ const RuleEditorContent = () => {
                     <MiniMap
                         nodeColor={nodeColor}
                         style={{
-                            backgroundColor: 'rgba(255,255,255,0.8)',
-                            border: '1px solid #ddd'
+                            backgroundColor: 'var(--bg-card)',
+                            border: 'var(--glass-border)'
                         }}
                     />
-                    <Background color="#aaa" gap={16} variant={BackgroundVariant.Dots} />
+                    <Background color="#888" gap={16} variant={BackgroundVariant.Dots} style={{ backgroundColor: 'var(--bg-color)' }} />
                     <Panel position="top-right">
                         <Space>
                             <Tooltip title="Zoom In">
@@ -694,7 +895,13 @@ const RuleEditorContent = () => {
                                 }} />
                             </Tooltip>
                             <Tooltip title="Paste Node (Ctrl+V)">
-                                <Button icon={<SnippetsOutlined />} disabled={!copiedNode} onClick={onPasteNode} />
+                                <Button icon={<SnippetsOutlined />} disabled={!copiedSubgraph} onClick={() => onPasteNode()} />
+                            </Tooltip>
+                            <Tooltip title="Undo (Ctrl+Z)">
+                                <Button icon={<UndoOutlined />} disabled={!canUndo} onClick={onUndo} />
+                            </Tooltip>
+                            <Tooltip title="Redo (Ctrl+Y)">
+                                <Button icon={<RedoOutlined />} disabled={!canRedo} onClick={onRedo} />
                             </Tooltip>
                             <Tooltip title={isFullscreen ? "Exit Fullscreen" : "Fullscreen"}>
                                 <Button

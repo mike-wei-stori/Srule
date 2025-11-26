@@ -19,6 +19,8 @@ declare namespace API {
         username: string;
         nickname: string;
         email: string;
+        phone?: string;
+        roleId?: number;
         avatar?: string;
         status: number;
         createTime: string;
@@ -107,10 +109,10 @@ declare namespace API {
         password?: string;
     }
 
-    type LoginResult = Result<{
+    type LoginResult = {
         token: string;
         user: User;
-    }>;
+    };
 
     type RegisterParams = LoginParams;
 
@@ -188,6 +190,7 @@ declare namespace API {
     // Rule Execution
     type RuleExecutionParams = {
         packageId: number;
+        packageCode?: string;
         inputs: Record<string, any>;
     };
 

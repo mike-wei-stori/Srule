@@ -95,6 +95,7 @@ public class RulePackageController {
     }
 
     @PostMapping("/{id}/test")
+    @PreAuthorize("hasAuthority('PACKAGE_TEST')")
     public Map<String, Object> test(@PathVariable Long id, @RequestBody Map<String, Object> inputs) {
         return rulePackageService.test(id, inputs);
     }

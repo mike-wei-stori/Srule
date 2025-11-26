@@ -16,8 +16,8 @@ const Login: React.FC = () => {
   const { run: runLogin, loading: loginLoading } = useRequest(login, {
     manual: true,
     onSuccess: (res) => {
-      if (res && res.data) {
-        const token = res.data.token;
+      if (res) {
+        const token = res.token;
         if (token) {
           localStorage.setItem('token', token);
           message.success(intl.formatMessage({ id: 'common.success' }));
@@ -30,7 +30,7 @@ const Login: React.FC = () => {
   const { run: runRegister, loading: registerLoading } = useRequest(register, {
     manual: true,
     onSuccess: (res) => {
-      if (res && res.data) {
+      if (res) {
         message.success(intl.formatMessage({ id: 'common.success' }));
       }
     },

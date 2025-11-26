@@ -44,7 +44,7 @@ public class RulePackageServiceImpl extends ServiceImpl<RulePackageMapper, RuleP
         // For testing, we might want to reload first to ensure latest draft is used
         // Or we can have a separate "test" execution mode.
         // For simplicity, we'll reload and execute.
-        droolsService.reloadRules(pkg.getCode());
+        // droolsService.reloadRules(pkg.getCode());
         return droolsService.execute(pkg.getCode(), inputs);
     }
 }

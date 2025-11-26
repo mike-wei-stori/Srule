@@ -44,6 +44,8 @@ const ActionNode = (props: NodeProps) => {
             <Space direction="vertical" size={6} style={{ width: '100%' }}>
                 <Space.Compact style={{ width: '100%' }} className="nodrag">
                     <Select
+                        popupClassName="node-dropdown"
+                        dropdownMatchSelectWidth={false}
                         value={data.targetParameter}
                         onChange={(value) => handleDataChange({ targetParameter: value })}
                         placeholder="目标变量"
@@ -74,7 +76,7 @@ const ActionNode = (props: NodeProps) => {
                 {selectedVar && (
                     <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center' }}>
                         <Text type="secondary" style={{ fontSize: 10, marginRight: 4 }}>{selectedVar.code}</Text>
-                        <Tag color="green" style={{ fontSize: 10, margin: 0, lineHeight: '16px', padding: '0 4px' }}>{selectedVar.dataType}</Tag>
+                        <Tag color="green" style={{ fontSize: 10, margin: 0, lineHeight: '16px', padding: '0 4px' }}>{selectedVar.type}</Tag>
                     </div>
                 )}
             </Space>

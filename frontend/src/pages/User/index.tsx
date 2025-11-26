@@ -5,20 +5,13 @@ import { Button, message, Popconfirm } from 'antd';
 import { useIntl } from '@umijs/max';
 import { getUsers, createUser, updateUser, deleteUser } from '@/services/UserController';
 
-type SysUser = {
-    id: number;
-    username: string;
-    email: string;
-    phone: string;
-    roleId: number;
-    createTime: string;
-};
+
 
 const UserList: React.FC = () => {
     const actionRef = useRef<ActionType>();
     const intl = useIntl();
 
-    const columns: ProColumns<SysUser>[] = [
+    const columns: ProColumns<API.User>[] = [
         {
             title: intl.formatMessage({ id: 'pages.login.username' }),
             dataIndex: 'username',
@@ -70,7 +63,7 @@ const UserList: React.FC = () => {
 
     return (
         <PageContainer>
-            <ProTable<SysUser>
+            <ProTable<API.User>
                 headerTitle={intl.formatMessage({ id: 'menu.users' })}
                 actionRef={actionRef}
                 rowKey="id"
@@ -83,7 +76,7 @@ const UserList: React.FC = () => {
                         key="primary"
                         onClick={() => {
                             actionRef.current?.addEditRecord?.({
-                                id: (Math.random() * 1000000).toFixed(0),
+                                id: (Math.random() * 1000000).toFixed(0) as unknown as number, // Temporary cast for new ID
                             });
                         }}
                     >
@@ -93,9 +86,9 @@ const UserList: React.FC = () => {
                 request={async (params) => {
                     const result = await getUsers(params);
                     return {
-                        data: (result.data as SysUser[]) || [],
+                        data: result.data || [],
                         success: true,
-                        total: (result.data as SysUser[])?.length || 0,
+                        total: result.data?.length || 0,
                     };
                 }}
                 editable={{

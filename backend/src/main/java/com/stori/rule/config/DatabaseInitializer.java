@@ -97,6 +97,18 @@ public class DatabaseInitializer implements CommandLineRunner {
         defaultPermissions.add(createPermission("Delete Package", "PACKAGE_DELETE", "/api/packages", "DELETE", "Delete rule packages"));
         defaultPermissions.add(createPermission("Publish Package", "PACKAGE_PUBLISH", "/api/packages", "PUBLISH", "Publish rule packages"));
         defaultPermissions.add(createPermission("Test Package", "PACKAGE_TEST", "/api/packages", "TEST", "Test rule packages"));
+        defaultPermissions.add(createPermission("Offline Package", "PACKAGE_OFFLINE", "/api/packages", "OFFLINE", "Offline rule packages"));
+
+        // Package Version Management Permissions
+        defaultPermissions.add(createPermission("View Versions", "PACKAGE_VERSION_READ", "/api/packages/versions", "READ", "View package versions"));
+        defaultPermissions.add(createPermission("Rollback Version", "PACKAGE_VERSION_ROLLBACK", "/api/packages/versions", "ROLLBACK", "Rollback to version"));
+
+        // Record Management Permissions
+        defaultPermissions.add(createPermission("View Records", "RECORD_READ", "/api/records", "READ", "View execution records"));
+
+        // Rule Definition Management Permissions
+        defaultPermissions.add(createPermission("View Definitions", "DEFINITION_READ", "/api/definitions", "READ", "View rule definitions"));
+        defaultPermissions.add(createPermission("Save Definitions", "DEFINITION_SAVE", "/api/definitions", "SAVE", "Save rule definitions"));
 
         // Rule Execution Permission
         defaultPermissions.add(createPermission("Execute Rules", "RULE_EXECUTE", "/api/execute", "EXECUTE", "Execute rule packages"));
@@ -147,9 +159,12 @@ public class DatabaseInitializer implements CommandLineRunner {
             List<String> ruleManagerPermissions = Arrays.asList(
                 "FEATURE_READ", "FEATURE_CREATE", "FEATURE_UPDATE", "FEATURE_DELETE",
                 "PACKAGE_READ", "PACKAGE_CREATE", "PACKAGE_UPDATE", "PACKAGE_DELETE", 
-                "PACKAGE_PUBLISH", "PACKAGE_TEST",
+                "PACKAGE_PUBLISH", "PACKAGE_TEST", "PACKAGE_OFFLINE",
+                "PACKAGE_VERSION_READ", "PACKAGE_VERSION_ROLLBACK",
                 "VARIABLE_READ", "VARIABLE_CREATE", "VARIABLE_UPDATE", "VARIABLE_DELETE",
-                "RULE_EXECUTE"
+                "RULE_EXECUTE",
+                "RECORD_READ",
+                "DEFINITION_READ", "DEFINITION_SAVE"
             );
             assignPermissionsByCode(ruleManagerRole, ruleManagerPermissions);
             log.info("Assigned {} permissions to Rule Manager role", ruleManagerPermissions.size());
@@ -163,7 +178,10 @@ public class DatabaseInitializer implements CommandLineRunner {
                 "FEATURE_READ", 
                 "PACKAGE_READ", 
                 "VARIABLE_READ",
-                "RULE_EXECUTE"
+                "RULE_EXECUTE",
+                "RECORD_READ",
+                "DEFINITION_READ",
+                "PACKAGE_VERSION_READ"
             );
             assignPermissionsByCode(viewerRole, viewerPermissions);
             log.info("Assigned {} permissions to Viewer role", viewerPermissions.size());
