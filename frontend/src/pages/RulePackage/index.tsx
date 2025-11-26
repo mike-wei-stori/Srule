@@ -1,19 +1,22 @@
 import React, { useRef } from 'react';
 import { PageContainer, ProTable, ActionType, ProColumns } from '@ant-design/pro-components';
-import { Button, Modal, Form, Input, message, Popconfirm, Drawer, List } from 'antd';
-import { PlusOutlined } from '@ant-design/icons';
-import { history, request, useIntl } from '@umijs/max';
-import { getPackages, createPackage, deletePackage, publishPackage, offlinePackage, getPackageVersions, rollbackPackageVersion, loadPackageGraph } from '@/services/RulePackageController';
+import { Button, Modal, Form, Input, message, Popconfirm } from 'antd';
+import { PlusOutlined, CloudUploadOutlined, HistoryOutlined } from '@ant-design/icons';
+import { history, useIntl } from '@umijs/max';
+import { getPackages, createPackage, deletePackage, offlinePackage } from '@/services/RulePackageController';
+import PublishModal from '../RuleEditor/components/PublishModal';
+import VersionListDrawer from '../RuleEditor/components/VersionListDrawer';
 
 const RulePackagePage: React.FC = () => {
     const actionRef = useRef<ActionType>();
     const [form] = Form.useForm();
     const [isModalVisible, setIsModalVisible] = React.useState(false);
     const intl = useIntl();
-    const [publishModalVisible, setPublishModalVisible] = React.useState(false);
-    const [versionDrawerVisible, setVersionDrawerVisible] = React.useState(false);
+    
+    // New components state
+    const [publishVisible, setPublishVisible] = React.useState(false);
+    const [versionsVisible, setVersionsVisible] = React.useState(false);
     const [currentPackage, setCurrentPackage] = React.useState<API.RulePackage | null>(null);
-    const [versionList, setVersionList] = React.useState<any[]>([]);
 
     const handleAdd = async (values: any) => {
         await createPackage(values);
@@ -30,18 +33,12 @@ const RulePackagePage: React.FC = () => {
 
     const handlePublish = (record: API.RulePackage) => {
         setCurrentPackage(record);
-        setPublishModalVisible(true);
+        setPublishVisible(true);
     };
 
-    const confirmPublish = async (values: any) => {
-        try {
-            await publishPackage(currentPackage!.id, values.description);
-            message.success(intl.formatMessage({ id: 'pages.package.publishSuccess' }));
-            setPublishModalVisible(false);
-            actionRef.current?.reload();
-        } catch (error) {
-            message.error(intl.formatMessage({ id: 'pages.package.publishFailed' }));
-        }
+    const showVersions = (record: API.RulePackage) => {
+        setCurrentPackage(record);
+        setVersionsVisible(true);
     };
 
     const handleOffline = async (record: API.RulePackage) => {
@@ -53,28 +50,13 @@ const RulePackagePage: React.FC = () => {
             message.error(intl.formatMessage({ id: 'pages.package.offlineFailed' }));
         }
     };
-
-    const showVersions = async (record: API.RulePackage) => {
-        setCurrentPackage(record);
-        try {
-            const res = await getPackageVersions(record.id);
-            setVersionList((res.data as API.RulePackageVersion[]) || []);
-            setVersionDrawerVisible(true);
-        } catch (error) {
-            message.error(intl.formatMessage({ id: 'pages.package.loadVersionsFailed' }));
-        }
+    
+    const onPublishSuccess = () => {
+        actionRef.current?.reload();
     };
 
-    const handleRollback = async (versionId: number) => {
-        if (!currentPackage) return;
-        try {
-            await rollbackPackageVersion(currentPackage.id, versionId);
-            message.success(intl.formatMessage({ id: 'pages.package.rollbackSuccess' }));
-            setVersionDrawerVisible(false);
-            actionRef.current?.reload();
-        } catch (error) {
-            message.error(intl.formatMessage({ id: 'pages.package.rollbackFailed' }));
-        }
+    const onVersionChange = () => {
+        actionRef.current?.reload();
     };
 
     const columns: ProColumns<API.RulePackage>[] = [
@@ -106,9 +88,7 @@ const RulePackagePage: React.FC = () => {
             width: 250,
             render: (_, record) => [
                 <a key="edit" onClick={() => history.push(`/editor/${record.code}`)}>{intl.formatMessage({ id: 'common.edit' })}</a>,
-                record.status !== 'PUBLISHED' && (
-                    <a key="publish" onClick={() => handlePublish(record)}>{intl.formatMessage({ id: 'pages.package.publish' })}</a>
-                ),
+                <a key="publish" onClick={() => handlePublish(record)}>{intl.formatMessage({ id: 'pages.package.publish' })}</a>,
                 record.status === 'PUBLISHED' && (
                     <Popconfirm title={intl.formatMessage({ id: 'pages.package.confirmOffline' })} onConfirm={() => handleOffline(record)}>
                         <a key="offline" style={{ color: '#faad14' }}>{intl.formatMessage({ id: 'pages.package.offline' })}</a>
@@ -167,52 +147,24 @@ const RulePackagePage: React.FC = () => {
                 </Form>
             </Modal>
 
-            <Modal
-                title={intl.formatMessage({ id: 'pages.package.publishVersion' })}
-                open={publishModalVisible}
-                onCancel={() => setPublishModalVisible(false)}
-                onOk={() => document.getElementById('publish-form')?.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }))}
-            >
-                <Form
-                    id="publish-form"
-                    onFinish={confirmPublish}
-                    layout="vertical"
-                >
-                    <Form.Item name="version" label={intl.formatMessage({ id: 'pages.package.version' })} initialValue={`V${Date.now().toString().slice(-4)}`}>
-                        <Input disabled />
-                    </Form.Item>
-                    <Form.Item name="description" label={intl.formatMessage({ id: 'pages.package.versionDescription' })} rules={[{ required: true }]}>
-                        <Input.TextArea placeholder="请输入本次发布的变更内容" />
-                    </Form.Item>
-                </Form>
-            </Modal>
-
-            <Drawer
-                title={intl.formatMessage({ id: 'pages.package.versionHistory' })}
-                placement="right"
-                onClose={() => setVersionDrawerVisible(false)}
-                open={versionDrawerVisible}
-                width={400}
-            >
-                <List
-                    itemLayout="horizontal"
-                    dataSource={versionList}
-                    renderItem={(item: any) => (
-                        <List.Item actions={[<a key="rollback" onClick={() => handleRollback(item.id)}>{intl.formatMessage({ id: 'pages.package.rollback' })}</a>]}>
-                            <List.Item.Meta
-                                title={item.version}
-                                description={
-                                    <>
-                                        <div>{new Date(item.createdAt).toLocaleString()}</div>
-                                        <div>{item.description}</div>
-                                        <div style={{ fontSize: 12, color: '#999' }}>by {item.createdBy}</div>
-                                    </>
-                                }
-                            />
-                        </List.Item>
-                    )}
-                />
-            </Drawer>
+            {currentPackage && (
+                <>
+                    <PublishModal
+                        visible={publishVisible}
+                        onCancel={() => setPublishVisible(false)}
+                        onSuccess={onPublishSuccess}
+                        packageId={currentPackage.id}
+                        // contentJson is optional, backend handles it
+                    />
+                    <VersionListDrawer
+                        visible={versionsVisible}
+                        onClose={() => setVersionsVisible(false)}
+                        packageId={currentPackage.id}
+                        activeVersionId={currentPackage.activeVersionId}
+                        onVersionChange={onVersionChange}
+                    />
+                </>
+            )}
         </PageContainer>
     );
 };
