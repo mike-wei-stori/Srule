@@ -1,8 +1,10 @@
 package com.stori.rule.security;
 
 import com.stori.rule.entity.SysPermission;
+import com.stori.rule.entity.SysRole;
 import com.stori.rule.entity.SysUser;
 import com.stori.rule.mapper.SysPermissionMapper;
+import com.stori.rule.mapper.SysRoleMapper;
 import com.stori.rule.mapper.SysUserMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -12,8 +14,8 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 public class UserDetailsServiceImpl implements UserDetailsService {
@@ -23,6 +25,9 @@ public class UserDetailsServiceImpl implements UserDetailsService {
 
     @Autowired
     private SysPermissionMapper permissionMapper;
+
+    @Autowired
+    private SysRoleMapper roleMapper;
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
@@ -42,10 +47,19 @@ public class UserDetailsServiceImpl implements UserDetailsService {
     }
 
     private UserDetails createSpringUser(SysUser sysUser) {
+        List<SimpleGrantedAuthority> authorities = new ArrayList<>();
+
+        // Add Roles with ROLE_ prefix
+        List<SysRole> roles = roleMapper.selectByUserId(sysUser.getId());
+        for (SysRole role : roles) {
+            authorities.add(new SimpleGrantedAuthority("ROLE_" + role.getCode()));
+        }
+
+        // Add Permissions
         List<SysPermission> permissions = permissionMapper.selectByUserId(sysUser.getId());
-        List<SimpleGrantedAuthority> authorities = permissions.stream()
-                .map(p -> new SimpleGrantedAuthority(p.getCode()))
-                .collect(Collectors.toList());
+        for (SysPermission permission : permissions) {
+            authorities.add(new SimpleGrantedAuthority(permission.getCode()));
+        }
 
         return new User(sysUser.getUsername(), sysUser.getPassword(), authorities);
     }

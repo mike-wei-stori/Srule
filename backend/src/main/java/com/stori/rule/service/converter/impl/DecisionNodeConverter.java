@@ -51,11 +51,27 @@ public class DecisionNodeConverter extends AbstractNodeConverter {
         // Generate rules for True and False branches
         for (EdgeDto edge : edges) {
             String targetId = edge.getTarget();
-            String label = edge.getSourceHandle() != null ? edge.getSourceHandle() : edge.getLabel();
-            boolean isTrue = "true".equalsIgnoreCase(label);
+            String handle = edge.getSourceHandle();
+            String label = edge.getLabel();
+            
+            // Strict check: handle "true" -> True, handle "false" -> False
+            // Fallback: label "True" -> True, label "False" -> False
+            // Default: if neither, assume True (or skip? let's assume True for flow continuity if ambiguous)
+            
+            boolean isTrue = true;
+            if (handle != null) {
+                isTrue = "true".equalsIgnoreCase(handle);
+            } else if (label != null) {
+                isTrue = "true".equalsIgnoreCase(label) || "yes".equalsIgnoreCase(label);
+            } else {
+                // If no handle and no label, check if we already have a True edge?
+                // For now, default to True unless it looks like a False edge
+                isTrue = true;
+            }
             
             String ruleName = getRuleName(node, context) + "_" + (isTrue ? "TRUE" : "FALSE") + "_" + targetId;
             
+            drl.append("// Rule for edge to ").append(targetId).append(" (").append(isTrue ? "True" : "False").append(")\n");
             drl.append("rule \"").append(ruleName).append("\"\n");
             drl.append("    agenda-group \"").append(getAgendaGroup(node.getId())).append("\"\n");
             drl.append("when\n");

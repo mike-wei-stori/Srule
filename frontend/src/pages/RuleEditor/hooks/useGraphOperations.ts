@@ -1,7 +1,6 @@
 import { useState, useCallback, useRef } from 'react';
 import { Node, Edge, ReactFlowInstance, MarkerType, addEdge } from 'reactflow';
 import { message } from 'antd';
-import { IntlShape } from 'react-intl';
 import { getDescendants, Subgraph } from '../utils/graph';
 
 interface UseGraphOperationsProps {
@@ -9,8 +8,8 @@ interface UseGraphOperationsProps {
     packageId: number | null;
     setNodes: React.Dispatch<React.SetStateAction<Node[]>>;
     setEdges: React.Dispatch<React.SetStateAction<Edge[]>>;
-    intl: IntlShape;
-    takeSnapshot: (nodes?: Node[], edges?: Edge[]) => void;
+    intl: any;
+    takeSnapshot: (nodes: Node[], edges: Edge[]) => void;
     onLayout: (direction?: string) => void;
 }
 
@@ -48,10 +47,10 @@ export const useGraphOperations = ({
         // Or takeSnapshot should also not depend on them? 
         // takeSnapshot in useUndoRedo usually takes current state.
         // We can get current state from reactFlowInstance.
-        
+
         if (reactFlowInstance) {
             if (now - lastDataChangeTime.current > 1000) {
-                 takeSnapshot(reactFlowInstance.getNodes(), reactFlowInstance.getEdges());
+                takeSnapshot(reactFlowInstance.getNodes(), reactFlowInstance.getEdges());
             }
         }
         lastDataChangeTime.current = now;
@@ -105,7 +104,7 @@ export const useGraphOperations = ({
     // Paste Node
     const onPasteNode = useCallback((position?: { x: number; y: number }) => {
         if (!copiedSubgraph || !packageId || !reactFlowInstance) return;
-        
+
         takeSnapshot(reactFlowInstance.getNodes(), reactFlowInstance.getEdges());
 
         // Calculate offset
@@ -321,7 +320,7 @@ export const useGraphOperations = ({
                 // But wait, the parent's useEffect depends on `nodes`. 
                 // So when we call setNodes here, parent rerenders, useEffect runs, updates handlers.
                 // That should be fine.
-                
+
                 // (newNode.data as any).onMenuClick = (a: string, id: string) => onMenuClick(a, id);
 
                 setNodes((nds) => nds.concat(newNode!));

@@ -221,6 +221,38 @@ body {
   box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.2) !important;
 }
 
+/* Fix for double border issue on Inputs with affixes */
+.ant-input-affix-wrapper {
+  background: rgba(255, 255, 255, 0.05) !important;
+  border: 1px solid var(--border-color) !important;
+  color: var(--text-primary) !important;
+}
+
+.ant-input-affix-wrapper .ant-input {
+  background: transparent !important;
+  border: none !important;
+}
+
+.ant-input-affix-wrapper:hover,
+.ant-input-affix-wrapper:focus,
+.ant-input-affix-wrapper-focused {
+  border-color: var(--primary-color) !important;
+  box-shadow: 0 0 0 2px rgba(0, 243, 255, 0.2) !important;
+}
+
+[data-theme='light'] .ant-input-affix-wrapper {
+  background: #fff !important;
+  border: 1px solid #d9d9d9 !important;
+  color: #333 !important;
+}
+
+[data-theme='light'] .ant-input-affix-wrapper:hover,
+[data-theme='light'] .ant-input-affix-wrapper:focus,
+[data-theme='light'] .ant-input-affix-wrapper-focused {
+  border-color: #40a9ff !important;
+  box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.2) !important;
+}
+
 /* Typography */
 h1,
 h2,

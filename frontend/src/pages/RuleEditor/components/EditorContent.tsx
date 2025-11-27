@@ -76,9 +76,9 @@ const EditorContent = () => {
         // However, takeSnapshot inside needs current state.
         // Let's pass current state to takeSnapshot if needed.
         if (reactFlowInstance) {
-             takeSnapshot(reactFlowInstance.getNodes(), reactFlowInstance.getEdges());
+            takeSnapshot(reactFlowInstance.getNodes(), reactFlowInstance.getEdges());
         }
-        
+
         const currentNodes = reactFlowInstance.getNodes();
         const currentEdges = reactFlowInstance.getEdges();
         const { nodes: layoutedNodes, edges: layoutedEdges } = getLayoutedElements(
@@ -142,7 +142,7 @@ const EditorContent = () => {
                         res.data.edges || [],
                         'LR'
                     );
-                    
+
                     // We need to inject handlers here initially to avoid flickering or missing handlers
                     // But we can't depend on them in dependency array.
                     // The trick is: use refs or just set them here, but don't include them in deps.
@@ -150,7 +150,7 @@ const EditorContent = () => {
                     // Another way: define handlers in a ref?
                     // Or: trust that handlers from hook are stable enough (if they don't depend on changing state).
                     // Now that useGraphOperations handlers don't depend on 'nodes', they should be stable!
-                    
+
                     const nodesWithHandlers = layoutedNodes.map(node => ({
                         ...node,
                         data: {
@@ -239,7 +239,7 @@ const EditorContent = () => {
         // Logic for Decision nodes label
         let label = '';
         const sourceNode = reactFlowInstance.getNode(params.source!); // Use instance to get node
-        
+
         if (sourceNode && sourceNode.type === 'DECISION') {
             if (params.sourceHandle === 'true') {
                 label = 'True';
@@ -264,15 +264,29 @@ const EditorContent = () => {
     const getGraphData = () => {
         const currentNodes = nodes;
         const currentEdges = edges;
-        
+
+        // Sort edges by source, then by target node Y position
+        const sortedEdges = [...currentEdges].sort((a, b) => {
+            if (a.source !== b.source) {
+                return a.source.localeCompare(b.source);
+            }
+
+            const nodeA = currentNodes.find(n => n.id === a.target);
+            const nodeB = currentNodes.find(n => n.id === b.target);
+
+            if (!nodeA || !nodeB) return 0;
+
+            return nodeA.position.y - nodeB.position.y;
+        });
+
         return {
             nodes: currentNodes.map(n => ({
                 id: n.id,
                 type: n.type,
                 data: n.data,
-                position: { x: 0, y: 0 } 
+                position: { x: 0, y: 0 }
             })),
-            edges: currentEdges.map(e => ({
+            edges: sortedEdges.map(e => ({
                 id: e.id,
                 source: e.source,
                 target: e.target,
@@ -328,7 +342,7 @@ const EditorContent = () => {
         // Original: const result = undo(nodes, edges);
         // If undo needs current state to maybe save it or compare? 
         // Let's assume it needs current state.
-        
+
         // Actually, if we change nodes dependency here, we re-introduce dependency on state.
         // We can pass current state from instance?
         // But undo/redo might need to be pure or use refs.
@@ -359,7 +373,7 @@ const EditorContent = () => {
 
     const onEdgesChangeWrapped = useCallback((changes: any) => {
         if (changes.some((c: any) => c.type === 'remove')) {
-             if (reactFlowInstance) {
+            if (reactFlowInstance) {
                 takeSnapshot(reactFlowInstance.getNodes(), reactFlowInstance.getEdges());
             }
         }
@@ -369,10 +383,10 @@ const EditorContent = () => {
     const onNodeDragStart = useCallback((event: React.MouseEvent, node: Node) => {
         // takeSnapshot(nodes, edges);
         if (reactFlowInstance) {
-             takeSnapshot(reactFlowInstance.getNodes(), reactFlowInstance.getEdges());
-             
-             const subgraph = getDescendants(node.id, reactFlowInstance.getNodes(), reactFlowInstance.getEdges());
-             const descendantIds = new Set(subgraph.nodes.map(n => n.id));
+            takeSnapshot(reactFlowInstance.getNodes(), reactFlowInstance.getEdges());
+
+            const subgraph = getDescendants(node.id, reactFlowInstance.getNodes(), reactFlowInstance.getEdges());
+            const descendantIds = new Set(subgraph.nodes.map(n => n.id));
 
             setNodes(nds => nds.map(n => ({
                 ...n,
@@ -482,7 +496,7 @@ const EditorContent = () => {
                     fitView
                     snapToGrid={true}
                     snapGrid={[15, 15]}
-                    minZoom={0.1} 
+                    minZoom={0.1}
                     attributionPosition="bottom-right"
                 >
                     <CanvasContextMenu

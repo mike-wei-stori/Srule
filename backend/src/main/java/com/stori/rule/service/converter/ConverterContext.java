@@ -30,6 +30,15 @@ public class ConverterContext {
         for (EdgeDto edge : graph.getEdges()) {
             this.edgeMap.computeIfAbsent(edge.getSource(), k -> new ArrayList<>()).add(edge);
         }
+        // Sort edges for deterministic output
+        this.edgeMap.values().forEach(list -> list.sort((e1, e2) -> {
+            // Sort by sourceHandle if available (True/False), then by ID
+            String h1 = e1.getSourceHandle() != null ? e1.getSourceHandle() : "";
+            String h2 = e2.getSourceHandle() != null ? e2.getSourceHandle() : "";
+            int hComp = h1.compareTo(h2);
+            if (hComp != 0) return hComp;
+            return e1.getId().compareTo(e2.getId());
+        }));
     }
     
     public NodeDto getNode(String id) {
