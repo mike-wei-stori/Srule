@@ -10,7 +10,8 @@ import ReactFlow, {
     Connection,
     MarkerType,
     useReactFlow,
-    BackgroundVariant
+    BackgroundVariant,
+    ConnectionLineType
 } from 'reactflow';
 import 'reactflow/dist/style.css';
 import { message } from 'antd';
@@ -30,7 +31,7 @@ import VersionListDrawer from './VersionListDrawer';
 
 import { getLayoutedElements } from '../utils/layout';
 import { useUndoRedo } from '../hooks/useUndoRedo';
-import { getDescendants } from '../utils/graph';
+import { getDescendants, hasCycle } from '../utils/graph';
 import { useGraphOperations } from '../hooks/useGraphOperations';
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
 
@@ -70,7 +71,7 @@ const EditorContent = () => {
     const { takeSnapshot, undo, redo, canUndo, canRedo } = useUndoRedo();
 
     // Auto Layout
-    const onLayout = useCallback((direction = 'LR') => {
+    const onLayout = useCallback((direction = 'LR', nodesOverride?: Node[], edgesOverride?: Edge[]) => {
         // takeSnapshot(nodes, edges); // Avoid depending on nodes state if possible, use getter?
         // But onLayout uses reactFlowInstance.getNodes(), so it's fine.
         // However, takeSnapshot inside needs current state.
@@ -79,8 +80,8 @@ const EditorContent = () => {
             takeSnapshot(reactFlowInstance.getNodes(), reactFlowInstance.getEdges());
         }
 
-        const currentNodes = reactFlowInstance.getNodes();
-        const currentEdges = reactFlowInstance.getEdges();
+        const currentNodes = nodesOverride || reactFlowInstance.getNodes();
+        const currentEdges = edgesOverride || reactFlowInstance.getEdges();
         const { nodes: layoutedNodes, edges: layoutedEdges } = getLayoutedElements(
             currentNodes,
             currentEdges,
@@ -137,9 +138,15 @@ const EditorContent = () => {
             try {
                 const res = await loadPackageGraph(packageId);
                 if (res.data && res.data.nodes && res.data.nodes.length > 0) {
+                    const styledEdges = (res.data.edges || []).map((edge: any) => ({
+                        ...edge,
+                        style: { strokeWidth: 2, stroke: '#b1b1b7' },
+                        markerEnd: { type: MarkerType.ArrowClosed }
+                    }));
+
                     const { nodes: layoutedNodes, edges: layoutedEdges } = getLayoutedElements(
                         res.data.nodes,
-                        res.data.edges || [],
+                        styledEdges,
                         'LR'
                     );
 
@@ -253,13 +260,26 @@ const EditorContent = () => {
             }
         }
 
+        // Check for cycles
+        if (hasCycle(params, nodes, edges)) {
+            message.warning(intl.formatMessage({ id: 'pages.editor.cycleDetected', defaultMessage: 'Cannot create a cycle' }));
+            return;
+        }
+
+        // Determine edge style
+        const val = (label || params.sourceHandle || '').trim().toLowerCase();
+        let stroke = '#b1b1b7';
+        if (val === 'true') stroke = '#52c41a';
+        if (val === 'false') stroke = '#ff4d4f';
+
         setEdges((eds) => addEdge({
             ...params,
-            type: 'smoothstep',
+            type: 'default',
             label,
-            markerEnd: { type: MarkerType.ArrowClosed }
+            style: { strokeWidth: 2, stroke },
+            markerEnd: { type: MarkerType.ArrowClosed, color: stroke }
         }, eds));
-    }, [setEdges, reactFlowInstance, takeSnapshot]);
+    }, [setEdges, reactFlowInstance, takeSnapshot, nodes, edges, intl]);
 
     const getGraphData = () => {
         const currentNodes = nodes;
@@ -387,13 +407,19 @@ const EditorContent = () => {
 
             const subgraph = getDescendants(node.id, reactFlowInstance.getNodes(), reactFlowInstance.getEdges());
             const descendantIds = new Set(subgraph.nodes.map(n => n.id));
+            const descendantEdgeIds = new Set(subgraph.edges.map(e => e.id));
 
             setNodes(nds => nds.map(n => ({
                 ...n,
                 selected: descendantIds.has(n.id) || n.selected
             })));
+
+            setEdges(eds => eds.map(e => ({
+                ...e,
+                selected: descendantEdgeIds.has(e.id) || e.selected
+            })));
         }
-    }, [takeSnapshot, setNodes, reactFlowInstance]);
+    }, [takeSnapshot, setNodes, setEdges, reactFlowInstance]);
 
     useKeyboardShortcuts({
         nodes,
@@ -498,13 +524,15 @@ const EditorContent = () => {
                     snapGrid={[15, 15]}
                     minZoom={0.1}
                     attributionPosition="bottom-right"
+                    connectionLineType={ConnectionLineType.Bezier}
+                    connectionLineStyle={{ strokeWidth: 2, stroke: '#b1b1b7' }}
                 >
                     <CanvasContextMenu
                         visible={menuVisible}
                         position={menuPosition}
                         onClose={() => setMenuVisible(false)}
                         onPaste={onPasteNode}
-                        onAddNode={onAddNodeFromMenu}
+                        onAddNode={(type, pos) => onAddNodeFromMenu(type, pos)}
                     />
                     <Controls />
                     <MiniMap

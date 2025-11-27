@@ -20,6 +20,9 @@ public class SysUserRole {
     @Column(value = "role_id", notNull = true, comment = "角色ID")
     private Long roleId;
 
+    @Column(value = "tenant_id", length = 50, defaultValue = "DEFAULT", comment = "租户ID")
+    private String tenantId;
+
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
 
@@ -28,4 +31,7 @@ public class SysUserRole {
 
     public Long getRoleId() { return roleId; }
     public void setRoleId(Long roleId) { this.roleId = roleId; }
+
+    public String getTenantId() { return tenantId; }
+    public void setTenantId(String tenantId) { this.tenantId = tenantId; }
 }

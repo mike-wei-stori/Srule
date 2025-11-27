@@ -33,6 +33,9 @@ public class FeatureRecord {
     @Column(value = "execution_time_ms", comment = "执行耗时(ms)")
     private Long executionTimeMs;
 
+    @Column(value = "tenant_id", length = 50, defaultValue = "DEFAULT", comment = "租户ID")
+    private String tenantId;
+
     @TableField(fill = FieldFill.INSERT)
     @Column(value = "created_at", comment = "创建时间")
     private LocalDateTime createdAt;

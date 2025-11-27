@@ -10,7 +10,7 @@ interface UseGraphOperationsProps {
     setEdges: React.Dispatch<React.SetStateAction<Edge[]>>;
     intl: any;
     takeSnapshot: (nodes: Node[], edges: Edge[]) => void;
-    onLayout: (direction?: string) => void;
+    onLayout: (direction?: string, nodes?: Node[], edges?: Edge[]) => void;
 }
 
 export const useGraphOperations = ({
@@ -148,13 +148,22 @@ export const useGraphOperations = ({
             };
         });
 
-        const newEdges = copiedSubgraph.edges.map(edge => ({
-            ...edge,
-            id: `e${idMapping.get(edge.source)}-${idMapping.get(edge.target)}`,
-            source: idMapping.get(edge.source)!,
-            target: idMapping.get(edge.target)!,
-            selected: false
-        }));
+        const newEdges = copiedSubgraph.edges.map(edge => {
+            const val = (edge.label as string || edge.sourceHandle || '').trim().toLowerCase();
+            let stroke = '#b1b1b7';
+            if (val === 'true') stroke = '#52c41a';
+            if (val === 'false') stroke = '#ff4d4f';
+
+            return {
+                ...edge,
+                id: `e${idMapping.get(edge.source)}-${idMapping.get(edge.target)}`,
+                source: idMapping.get(edge.source)!,
+                target: idMapping.get(edge.target)!,
+                selected: false,
+                style: { strokeWidth: 2, stroke },
+                markerEnd: { type: MarkerType.ArrowClosed, color: stroke }
+            };
+        });
 
         setNodes((nds) => nds.concat(newNodes));
         setEdges((eds) => eds.concat(newEdges));
@@ -176,8 +185,47 @@ export const useGraphOperations = ({
             return;
         }
 
-        const siblingEdges = currentEdges.filter(e => e.source === parentEdge.source);
+        // Helper to get rank (consistent with layout.ts)
+        const getRank = (edge: Edge) => {
+            const val = (edge.label as string || edge.sourceHandle || '').trim().toLowerCase();
+            if (val === 'true' || val === '') return 1;
+            if (val === 'false') return 2;
+            return 3;
+        };
+
+        const parentRank = getRank(parentEdge);
+
+        // Filter and deduplicate sibling edges
+        const seenTargets = new Set<string>();
+        const siblingEdges = currentEdges.filter(e => {
+            // Must be same source
+            if (e.source !== parentEdge.source) return false;
+
+            // Must be same rank (same branch type)
+            if (getRank(e) !== parentRank) return false;
+
+            // Must point to an existing node (filter out ghost edges)
+            const targetNodeExists = currentNodes.some(n => n.id === e.target);
+            if (!targetNodeExists) return false;
+
+            // Deduplicate targets (only keep first edge to a specific target)
+            if (seenTargets.has(e.target)) return false;
+            seenTargets.add(e.target);
+
+            return true;
+        });
+
         const currentIndex = siblingEdges.findIndex(e => e.target === nodeId);
+
+        console.log('onMoveNode Debug:', {
+            nodeId,
+            direction,
+            parentEdge,
+            parentRank,
+            allEdgesCount: currentEdges.length,
+            siblingEdges: siblingEdges.map(e => ({ id: e.id, source: e.source, target: e.target, rank: getRank(e) })),
+            currentIndex
+        });
 
         if (currentIndex === -1) return;
 
@@ -199,25 +247,25 @@ export const useGraphOperations = ({
         const indexB = newEdges.findIndex(e => e.id === edgeB.id);
 
         if (indexA !== -1 && indexB !== -1) {
+            console.log('onMoveNode: Swapping edges', {
+                edgeA: newEdges[indexA].id,
+                edgeB: newEdges[indexB].id,
+                indexA,
+                indexB
+            });
+
             [newEdges[indexA], newEdges[indexB]] = [newEdges[indexB], newEdges[indexA]];
 
-            const parentNode = currentNodes.find(n => n.id === parentEdge.source);
-            if (parentNode && parentNode.type === 'DECISION') {
-                const tempLabel = newEdges[indexA].label;
-                const tempHandle = newEdges[indexA].sourceHandle;
-
-                newEdges[indexA] = { ...newEdges[indexA], label: newEdges[indexB].label, sourceHandle: newEdges[indexB].sourceHandle };
-                newEdges[indexB] = { ...newEdges[indexB], label: tempLabel, sourceHandle: tempHandle };
-            }
+            console.log('onMoveNode: New edges order (slice)', newEdges.slice(Math.min(indexA, indexB), Math.max(indexA, indexB) + 1));
 
             setEdges(newEdges);
-            setTimeout(() => onLayout(), 50);
+            onLayout(undefined, undefined, newEdges);
             message.success(direction === 'up' ? intl.formatMessage({ id: 'pages.editor.moveUp' }) : intl.formatMessage({ id: 'pages.editor.moveDown' }));
         }
-    }, [reactFlowInstance, takeSnapshot, intl, setEdges, onLayout]);
+    }, [reactFlowInstance, takeSnapshot, setEdges, onLayout, intl]);
 
     // Menu Click
-    const onMenuClick = useCallback((action: string, nodeId: string) => {
+    const onMenuClick = useCallback((action: string, nodeId: string, sourceHandle?: string) => {
         if (!reactFlowInstance) return;
         const currentNodes = reactFlowInstance.getNodes();
         const parentNode = currentNodes.find(n => n.id === nodeId);
@@ -313,27 +361,63 @@ export const useGraphOperations = ({
             }
 
             if (newNode) {
-                // Circular dependency handling: pass onMenuClick dynamically or update later.
-                // We'll update handlers via useEffect in the parent, so this is fine.
-                // But for immediate consistency we might need it.
-                // Let's rely on parent's useEffect to update handlers for new nodes too.
-                // But wait, the parent's useEffect depends on `nodes`. 
-                // So when we call setNodes here, parent rerenders, useEffect runs, updates handlers.
-                // That should be fine.
-
-                // (newNode.data as any).onMenuClick = (a: string, id: string) => onMenuClick(a, id);
-
                 setNodes((nds) => nds.concat(newNode!));
+
+                // Determine source handle and label
+                let edgeSourceHandle = sourceHandle;
+                let edgeLabel = undefined;
+
+                if (parentNode.type === 'DECISION') {
+                    if (sourceHandle === 'true') {
+                        edgeLabel = 'True';
+                    } else if (sourceHandle === 'false') {
+                        edgeLabel = 'False';
+                    } else {
+                        // Default to True if not specified for Decision node
+                        edgeSourceHandle = 'true';
+                        edgeLabel = 'True';
+                    }
+                } else if (action === 'addCondition') {
+                    edgeLabel = 'True';
+                }
+
+                // Helper to determine edge style based on label/handle
+                const getEdgeStyle = (label?: string, handle?: string) => {
+                    const val = (label || handle || '').trim().toLowerCase();
+                    if (val === 'true') return { strokeWidth: 2, stroke: '#52c41a' }; // Green
+                    if (val === 'false') return { strokeWidth: 2, stroke: '#ff4d4f' }; // Red
+                    return { strokeWidth: 2, stroke: '#b1b1b7' }; // Default Grey
+                };
+
+                const edgeStyle = getEdgeStyle(edgeLabel, edgeSourceHandle);
+
                 setEdges((eds) => eds.concat({
                     id: `e${parentNode.id}-${newId}`,
                     source: parentNode.id,
                     target: newId,
-                    type: 'smoothstep',
-                    label: action === 'addCondition' || action === 'addDecision' || action === 'addSubDecision' ? 'True' : undefined,
-                    markerEnd: { type: MarkerType.ArrowClosed },
+                    sourceHandle: edgeSourceHandle,
+                    type: 'default',
+                    label: edgeLabel,
+                    style: edgeStyle,
+                    markerEnd: { type: MarkerType.ArrowClosed, color: edgeStyle.stroke },
                 }));
 
-                setTimeout(() => onLayout(), 50);
+                // Construct new state for layout
+                const updatedNodes = currentNodes.concat(newNode!);
+                const updatedEdges = reactFlowInstance.getEdges().concat({
+                    id: `e${parentNode.id}-${newId}`,
+                    source: parentNode.id,
+                    target: newId,
+                    sourceHandle: edgeSourceHandle,
+                    type: 'default',
+                    label: edgeLabel,
+                    style: edgeStyle,
+                    markerEnd: { type: MarkerType.ArrowClosed, color: edgeStyle.stroke },
+                });
+
+
+
+                onLayout(undefined, updatedNodes, updatedEdges);
             }
         } catch (e) {
             console.error('Error in onMenuClick:', e);
@@ -341,20 +425,25 @@ export const useGraphOperations = ({
         }
     }, [reactFlowInstance, takeSnapshot, intl, onCopyNode, onPasteNode, onMoveNode, generateNodeName, onNodeDataChange, packageId, validateNodeName, setNodes, setEdges, onLayout]);
 
-    const onAddNodeFromMenu = useCallback((type: string) => {
+    const onAddNodeFromMenu = useCallback((type: string, position?: { x: number; y: number }) => {
         if (!reactFlowInstance || !packageId) return;
 
         takeSnapshot(reactFlowInstance.getNodes(), reactFlowInstance.getEdges());
 
         const currentNodes = reactFlowInstance.getNodes();
         const id = `node_${Date.now()}`;
-        const position = { x: 100 + currentNodes.length * 20, y: 100 + currentNodes.length * 20 };
+
+        let nodePosition = { x: 100 + currentNodes.length * 20, y: 100 + currentNodes.length * 20 };
+        if (position) {
+            nodePosition = reactFlowInstance.screenToFlowPosition(position);
+        }
+
         const label = generateNodeName(type);
 
         const newNode: Node = {
             id,
             type,
-            position,
+            position: nodePosition,
             data: {
                 label,
                 type,

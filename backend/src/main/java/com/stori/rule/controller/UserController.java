@@ -38,7 +38,25 @@ public class UserController {
     @GetMapping
     @PreAuthorize("hasAuthority('USER_READ')")
     public Result<List<SysUser>> list() {
-        return Result.success(userMapper.selectList(null));
+        List<SysUser> users = userMapper.selectList(null);
+        if (users != null && !users.isEmpty()) {
+            // Get all user IDs
+            List<Long> userIds = users.stream().map(SysUser::getId).collect(Collectors.toList());
+            
+            // Get all roles for these users
+            com.baomidou.mybatisplus.core.conditions.query.QueryWrapper<SysUserRole> queryWrapper = new com.baomidou.mybatisplus.core.conditions.query.QueryWrapper<>();
+            queryWrapper.in("user_id", userIds);
+            List<SysUserRole> userRoles = userRoleMapper.selectList(queryWrapper);
+            
+            // Map roles to users
+            java.util.Map<Long, Long> userRoleMap = userRoles.stream()
+                .collect(Collectors.toMap(SysUserRole::getUserId, SysUserRole::getRoleId, (existing, replacement) -> existing));
+            
+            for (SysUser user : users) {
+                user.setRoleId(userRoleMap.get(user.getId()));
+            }
+        }
+        return Result.success(users);
     }
 
     @GetMapping("/{id}")
@@ -49,22 +67,71 @@ public class UserController {
 
     @PostMapping
     @PreAuthorize("hasAuthority('USER_CREATE')")
-    public Result<Boolean> create(@RequestBody SysUser user) {
+    public Result<Boolean> create(@RequestBody com.stori.rule.dto.UserUpdateDTO userDto) {
+        SysUser user = new SysUser();
+        user.setUsername(userDto.getUsername());
+        user.setNickname(userDto.getNickname());
+        user.setEmail(userDto.getEmail());
+        user.setPhone(userDto.getPhone());
+        
         // Hash password before saving
-        user.setPassword(passwordEncoder.encode(user.getPassword()));
-        return Result.success(userMapper.insert(user) > 0);
+        if (userDto.getPassword() != null && !userDto.getPassword().isEmpty()) {
+            user.setPassword(passwordEncoder.encode(userDto.getPassword()));
+        }
+        
+        boolean success = userMapper.insert(user) > 0;
+        
+        if (success && userDto.getRoleId() != null) {
+            SysUserRole userRole = new SysUserRole();
+            userRole.setUserId(user.getId());
+            userRole.setRoleId(userDto.getRoleId());
+            userRoleMapper.insert(userRole);
+        }
+        
+        return Result.success(success);
     }
 
     @PutMapping("/{id}")
     @PreAuthorize("hasAuthority('USER_UPDATE')")
-    public Result<Boolean> update(@PathVariable Long id, @RequestBody SysUser user) {
+    public Result<Boolean> update(@PathVariable Long id, @RequestBody com.stori.rule.dto.UserUpdateDTO userDto) {
+        SysUser user = new SysUser();
         user.setId(id);
-        return Result.success(userMapper.updateById(user) > 0);
+        user.setUsername(userDto.getUsername());
+        user.setNickname(userDto.getNickname());
+        user.setEmail(userDto.getEmail());
+        user.setPhone(userDto.getPhone());
+        
+        // Only update password if provided
+        if (userDto.getPassword() != null && !userDto.getPassword().isEmpty()) {
+            user.setPassword(passwordEncoder.encode(userDto.getPassword()));
+        }
+
+        boolean success = userMapper.updateById(user) > 0;
+        
+        if (success && userDto.getRoleId() != null) {
+            // Delete existing roles
+            com.baomidou.mybatisplus.core.conditions.query.QueryWrapper<SysUserRole> queryWrapper = new com.baomidou.mybatisplus.core.conditions.query.QueryWrapper<>();
+            queryWrapper.eq("user_id", id);
+            userRoleMapper.delete(queryWrapper);
+            
+            // Add new role
+            SysUserRole userRole = new SysUserRole();
+            userRole.setUserId(id);
+            userRole.setRoleId(userDto.getRoleId());
+            userRoleMapper.insert(userRole);
+        }
+        
+        return Result.success(success);
     }
 
     @DeleteMapping("/{id}")
     @PreAuthorize("hasAuthority('USER_DELETE')")
     public Result<Boolean> delete(@PathVariable Long id) {
+        // Delete user roles first
+        com.baomidou.mybatisplus.core.conditions.query.QueryWrapper<SysUserRole> queryWrapper = new com.baomidou.mybatisplus.core.conditions.query.QueryWrapper<>();
+        queryWrapper.eq("user_id", id);
+        userRoleMapper.delete(queryWrapper);
+        
         return Result.success(userMapper.deleteById(id) > 0);
     }
 

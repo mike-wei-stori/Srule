@@ -1,6 +1,6 @@
 import React from 'react';
 import { Button, Card, Typography, Form, Input, message, Divider, Tabs } from 'antd';
-import { GoogleOutlined, UserOutlined, LockOutlined } from '@ant-design/icons';
+import { GoogleOutlined, UserOutlined, LockOutlined, GlobalOutlined } from '@ant-design/icons';
 import { history, useIntl, useRequest } from '@umijs/max';
 import { login, register } from '@/services/AuthController';
 
@@ -10,16 +10,23 @@ const Login: React.FC = () => {
   const intl = useIntl();
 
   const handleGoogleLogin = () => {
-    window.location.href = 'http://localhost:8080/oauth2/authorization/google';
+    // Pass tenantId to OAuth2 authorization URL
+    const tenantId = localStorage.getItem('tenantId') || 'DEFAULT';
+    window.location.href = `http://localhost:8080/oauth2/authorization/google?tenantId=${tenantId}`;
   };
 
   const { run: runLogin, loading: loginLoading } = useRequest(login, {
     manual: true,
-    onSuccess: (res) => {
+    onSuccess: (res, params) => {
       if (res) {
         const token = res.token;
         if (token) {
           localStorage.setItem('token', token);
+          // Save tenantId from form input
+          const { tenantId } = params[0] as any;
+          if (tenantId) {
+            localStorage.setItem('tenantId', tenantId);
+          }
           message.success(intl.formatMessage({ id: 'common.success' }));
           history.push('/features');
         }

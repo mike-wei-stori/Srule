@@ -1,7 +1,7 @@
 import React from 'react';
 import { history, SelectLang, useIntl, getIntl } from '@umijs/max';
-import { message, Dropdown } from 'antd';
-import { LogoutOutlined, UserOutlined } from '@ant-design/icons';
+import { message, Dropdown, Select } from 'antd';
+import { LogoutOutlined, UserOutlined, GlobalOutlined } from '@ant-design/icons';
 
 import { getProfile } from '@/services/UserController';
 
@@ -19,7 +19,7 @@ export async function getInitialState(): Promise<{
 }> {
     const token = localStorage.getItem('token');
     const savedTheme = localStorage.getItem('theme') as 'dark' | 'light';
-    const theme = (savedTheme === 'light' || savedTheme === 'dark') ? savedTheme : 'dark';
+    const theme = (savedTheme === 'light' || savedTheme === 'dark') ? savedTheme : 'light';
 
     // Set initial theme attribute
     if (typeof document !== 'undefined') {
@@ -50,7 +50,7 @@ import '@/global.less';
 // Layout 配置
 export const layout = ({ initialState, setInitialState }: any) => {
     const intl = useIntl();
-    const theme = initialState?.theme || 'dark';
+    const theme = initialState?.theme || 'light';
     const isDark = theme === 'dark';
 
     // Ensure data-theme attribute is updated when state changes
@@ -115,6 +115,20 @@ export const layout = ({ initialState, setInitialState }: any) => {
                     onClick={toggleTheme}
                 >
                     {isDark ? '🌙' : '☀️'}
+                </div>,
+                <div key="tenant" style={{ display: 'flex', alignItems: 'center', padding: '0 12px' }}>
+                    <GlobalOutlined style={{ marginRight: 8, color: isDark ? '#e6f1ff' : 'inherit' }} />
+                    <Select
+                        defaultValue={localStorage.getItem('tenantId') || 'DEFAULT'}
+                        style={{ width: 120 }}
+                        onChange={(value) => {
+                            localStorage.setItem('tenantId', value);
+                            window.location.reload();
+                        }}
+                        options={[
+                            { value: 'DEFAULT', label: 'Default' }
+                        ]}
+                    />
                 </div>
             ];
         },
@@ -223,6 +237,7 @@ export const request = {
                 const headers = {
                     ...options.headers,
                     Authorization: `Bearer ${token}`,
+                    'X-Tenant-Id': localStorage.getItem('tenantId') || 'DEFAULT',
                 };
                 return {
                     url,

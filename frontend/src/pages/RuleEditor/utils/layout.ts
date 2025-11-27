@@ -1,5 +1,5 @@
 import dagre from 'dagre';
-import { Node, Edge, Position } from 'reactflow';
+import { Node, Edge, Position, MarkerType } from 'reactflow';
 
 const nodeWidth = 350; // Match BaseNode maxWidth
 
@@ -31,6 +31,10 @@ const getNodeHeight = (node: Node) => {
 };
 
 export const getLayoutedElements = (nodes: Node[], edges: Edge[], direction = 'LR') => {
+    // Filter out edges connected to non-existent nodes (ghost edges)
+    const validNodeIds = new Set(nodes.map(n => n.id));
+    const validEdges = edges.filter(e => validNodeIds.has(e.source) && validNodeIds.has(e.target));
+
     const dagreGraph = new dagre.graphlib.Graph();
     dagreGraph.setDefaultEdgeLabel(() => ({}));
 
@@ -44,21 +48,21 @@ export const getLayoutedElements = (nodes: Node[], edges: Edge[], direction = 'L
 
     // Helper to get rank of edge type
     const getRank = (edge: Edge) => {
-        const val = (edge.label as string || edge.sourceHandle || '').toLowerCase();
+        const val = (edge.label as string || edge.sourceHandle || '').trim().toLowerCase();
         if (val === 'true' || val === '') return 1;
         if (val === 'false') return 2;
         return 3;
     };
 
     // Sort nodes by incoming edge rank to influence Dagre's initial layout
-    // Nodes with incoming "True" edges should be processed first
-    // We also include the edge index in the rank to respect the order of edges (for Move Up/Down)
+    // We prioritize the edge index to respect the order of edges (for Move Up/Down)
     const nodeRankMap = new Map<string, number>();
-    edges.forEach((edge, index) => {
-        const rank = getRank(edge);
-        // Composite score: Rank (primary) + Index (secondary)
-        // Lower rank is better (True=1, False=2). Lower index is better (earlier in array).
-        const score = rank * 100000 + index;
+
+    console.log('Layout Debug: validEdges order:', validEdges.map(e => ({ id: e.id, source: e.source, target: e.target, rank: getRank(e) })));
+
+    validEdges.forEach((edge, index) => {
+        // Use index as the primary score to respect array order
+        const score = index;
 
         const currentScore = nodeRankMap.get(edge.target) || Number.MAX_SAFE_INTEGER;
         if (score < currentScore) {
@@ -77,19 +81,20 @@ export const getLayoutedElements = (nodes: Node[], edges: Edge[], direction = 'L
         dagreGraph.setNode(node.id, { width: nodeWidth, height: height });
     });
 
-    // Sort edges to ensure consistent layout (True above False)
-    // We also want to respect the order of edges in the input array for same-rank edges
-    // This allows "Move Up/Down" to work by changing the input array order
-    const edgesWithIndex = edges.map((e, i) => ({ ...e, originalIndex: i }));
+    // Sort edges to ensure consistent layout
+    // We respect the order of edges in the input array
+    const edgesWithIndex = validEdges.map((e, i) => ({ ...e, originalIndex: i }));
 
     const sortedEdges = [...edgesWithIndex].sort((a, b) => {
         if (a.source !== b.source) {
             return a.source.localeCompare(b.source);
         }
+
+        // Prioritize Rank (True < False) to enforce strict branch order
         const rankDiff = getRank(a) - getRank(b);
         if (rankDiff !== 0) return rankDiff;
 
-        // If ranks are same (e.g. both False or both Action), use original index
+        // Respect original index for same-rank edges (within the same branch)
         return a.originalIndex - b.originalIndex;
     });
 
@@ -101,6 +106,95 @@ export const getLayoutedElements = (nodes: Node[], edges: Edge[], direction = 'L
     });
 
     dagre.layout(dagreGraph);
+
+    // Helper to get all descendants of a node
+    const getSubtreeNodes = (rootId: string): string[] => {
+        const descendants: string[] = [rootId];
+        const queue = [rootId];
+        const visited = new Set<string>([rootId]);
+
+        while (queue.length > 0) {
+            const current = queue.shift()!;
+            const children = validEdges
+                .filter(e => e.source === current)
+                .map(e => e.target)
+                .filter(id => !visited.has(id));
+
+            children.forEach(child => {
+                visited.add(child);
+                descendants.push(child);
+                queue.push(child);
+            });
+        }
+        return descendants;
+    };
+
+    // Helper to move a subtree vertically
+    const moveSubtree = (rootId: string, deltaY: number) => {
+        const descendants = getSubtreeNodes(rootId);
+        descendants.forEach(id => {
+            const node = dagreGraph.node(id);
+            if (node) {
+                node.y += deltaY;
+            }
+        });
+    };
+
+    // Helper to get bounds of a subtree
+    const getSubtreeBounds = (rootId: string) => {
+        const descendants = getSubtreeNodes(rootId);
+        let minY = Infinity;
+        let maxY = -Infinity;
+        descendants.forEach(id => {
+            const node = dagreGraph.node(id);
+            if (node) {
+                minY = Math.min(minY, node.y - node.height / 2);
+                maxY = Math.max(maxY, node.y + node.height / 2);
+            }
+        });
+        return { minY, maxY, height: maxY - minY };
+    };
+
+    // Post-processing: Enforce vertical order based on edge index
+    // Dagre might reorder nodes to minimize crossings, but we want strict manual ordering.
+    const siblingsMap = new Map<string, Edge[]>();
+    sortedEdges.forEach(edge => {
+        // Group by source only, so all children (True and False) are processed together in order
+        const key = edge.source;
+        if (!siblingsMap.has(key)) {
+            siblingsMap.set(key, []);
+        }
+        siblingsMap.get(key)?.push(edge);
+    });
+
+    siblingsMap.forEach((siblingEdges) => {
+        if (siblingEdges.length <= 1) return;
+
+        // Calculate bounds for each sibling's subtree
+        const siblingBounds = siblingEdges.map(e => ({
+            id: e.target,
+            bounds: getSubtreeBounds(e.target)
+        }));
+
+        // Find the starting Y position (top-most of the group)
+        const startY = Math.min(...siblingBounds.map(b => b.bounds.minY));
+        let currentY = startY;
+
+        // Stack siblings vertically
+        siblingEdges.forEach(edge => {
+            const targetId = edge.target;
+            const bounds = getSubtreeBounds(targetId);
+
+            // Calculate how much to shift this subtree to place it at currentY
+            // We want the top of the subtree (minY) to be at currentY
+            const shift = currentY - bounds.minY;
+
+            moveSubtree(targetId, shift);
+
+            // Advance currentY by the height of this subtree + spacing
+            currentY += bounds.height + (isHorizontal ? 60 : 100); // Use nodesep
+        });
+    });
 
     const layoutedNodes = nodes.map((node) => {
         const nodeWithPosition = dagreGraph.node(node.id);
@@ -117,5 +211,19 @@ export const getLayoutedElements = (nodes: Node[], edges: Edge[], direction = 'L
         return node;
     });
 
-    return { nodes: layoutedNodes, edges };
+    // Apply colors to edges based on rank/label
+    const coloredEdges = edges.map(edge => {
+        const val = (edge.label as string || edge.sourceHandle || '').trim().toLowerCase();
+        let stroke = '#b1b1b7';
+        if (val === 'true') stroke = '#52c41a';
+        if (val === 'false') stroke = '#ff4d4f';
+
+        return {
+            ...edge,
+            style: { ...edge.style, strokeWidth: 2, stroke },
+            markerEnd: { type: MarkerType.ArrowClosed, color: stroke }
+        };
+    });
+
+    return { nodes: layoutedNodes, edges: coloredEdges };
 };

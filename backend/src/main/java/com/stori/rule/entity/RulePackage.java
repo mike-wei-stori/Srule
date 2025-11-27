@@ -35,6 +35,9 @@ public class RulePackage {
 
     @Column(value = "extension_data", type = "text", comment = "扩展数据(JSON)")
     private String extensionData;
+
+    @Column(value = "tenant_id", length = 50, defaultValue = "DEFAULT", comment = "租户ID")
+    private String tenantId;
     
     @TableField(fill = FieldFill.INSERT)
     @Column(value = "created_at", comment = "创建时间")
@@ -64,6 +67,9 @@ public class RulePackage {
 
     public String getExtensionData() { return extensionData; }
     public void setExtensionData(String extensionData) { this.extensionData = extensionData; }
+
+    public String getTenantId() { return tenantId; }
+    public void setTenantId(String tenantId) { this.tenantId = tenantId; }
 
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }

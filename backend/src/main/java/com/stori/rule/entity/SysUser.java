@@ -41,6 +41,9 @@ public class SysUser {
     @Column(value = "updated_at", comment = "更新时间")
     private LocalDateTime updatedAt;
 
+    @TableField(exist = false)
+    private Long roleId;
+
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
 

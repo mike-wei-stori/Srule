@@ -38,19 +38,13 @@ interface EditorToolbarProps {
 }
 
 const ToolbarButton = ({ disabled, icon, onClick, type = 'default', ...rest }: any) => {
-    const disabledStyle = disabled ? {
-        color: 'rgba(255, 255, 255, 0.25)',
-        borderColor: 'rgba(255, 255, 255, 0.15)',
-        backgroundColor: 'rgba(255, 255, 255, 0.05)'
-    } : {};
-
     return (
         <Button
             icon={icon}
             disabled={disabled}
             onClick={onClick}
             type={type}
-            style={{ ...disabledStyle }}
+            className="editor-toolbar-button"
             {...rest}
         />
     );
@@ -76,14 +70,7 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({
     hasCopiedContent,
 }) => {
     return (
-        <Panel position="top-right" style={{ 
-            background: 'var(--bg-card)', 
-            padding: 8, 
-            borderRadius: 8, 
-            border: 'var(--glass-border)',
-            display: 'flex',
-            gap: 8
-        }}>
+        <Panel position="top-right" className="editor-toolbar-panel">
             <Space>
                 <Tooltip title="Zoom In">
                     <ToolbarButton icon={<ZoomInOutlined />} onClick={onZoomIn} />
@@ -98,9 +85,9 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({
                     <ToolbarButton icon={<LayoutOutlined />} onClick={onLayout} />
                 </Tooltip>
                 <Tooltip title="Copy Node (Ctrl+C)">
-                    <ToolbarButton 
-                        icon={<CopyOutlined />} 
-                        disabled={!hasSelection} 
+                    <ToolbarButton
+                        icon={<CopyOutlined />}
+                        disabled={!hasSelection}
                         onClick={onCopy}
                     />
                 </Tooltip>

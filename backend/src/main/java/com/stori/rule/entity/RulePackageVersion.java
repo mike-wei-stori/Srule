@@ -32,6 +32,9 @@ public class RulePackageVersion {
     
     @Column(value = "snapshot_data", type = "TEXT", comment = "执行快照(包含DRL和变量定义)")
     private String snapshotData;
+
+    @Column(value = "tenant_id", length = 50, defaultValue = "DEFAULT", comment = "租户ID")
+    private String tenantId;
     
     @TableField(fill = FieldFill.INSERT)
     @Column(value = "created_at", comment = "创建时间")
@@ -57,6 +60,9 @@ public class RulePackageVersion {
 
     public String getSnapshotData() { return snapshotData; }
     public void setSnapshotData(String snapshotData) { this.snapshotData = snapshotData; }
+
+    public String getTenantId() { return tenantId; }
+    public void setTenantId(String tenantId) { this.tenantId = tenantId; }
 
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }

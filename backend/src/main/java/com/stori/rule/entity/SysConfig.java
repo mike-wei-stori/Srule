@@ -27,6 +27,9 @@ public class SysConfig {
     @Column(value = "description", length = 255, comment = "Description")
     private String description;
 
+    @Column(value = "tenant_id", length = 50, defaultValue = "DEFAULT", comment = "Tenant ID")
+    private String tenantId;
+
     @TableField(fill = FieldFill.INSERT)
     @Column(value = "created_at", comment = "Created At")
     private LocalDateTime createdAt;

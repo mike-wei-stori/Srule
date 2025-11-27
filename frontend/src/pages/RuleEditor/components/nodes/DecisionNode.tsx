@@ -79,7 +79,8 @@ const DecisionNode = (props: NodeProps) => {
                     type="source"
                     position={Position.Right}
                     id="true"
-                    style={{ position: 'relative', transform: 'none', top: 0, right: 0, background: '#52c41a', width: 8, height: 8 }}
+                    className="custom-node-handle"
+                    style={{ position: 'relative', transform: 'none', top: 0, right: 0, background: '#52c41a' }}
                 />
             </div>
             <div style={{ position: 'absolute', right: -12, top: '75%', transform: 'translate(100%, -50%)', display: 'flex', alignItems: 'center' }}>
@@ -88,7 +89,8 @@ const DecisionNode = (props: NodeProps) => {
                     type="source"
                     position={Position.Right}
                     id="false"
-                    style={{ position: 'relative', transform: 'none', top: 0, right: 0, background: '#ff4d4f', width: 8, height: 8 }}
+                    className="custom-node-handle"
+                    style={{ position: 'relative', transform: 'none', top: 0, right: 0, background: '#ff4d4f' }}
                 />
             </div>
         </>

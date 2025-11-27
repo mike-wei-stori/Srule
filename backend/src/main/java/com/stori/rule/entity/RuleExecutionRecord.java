@@ -39,6 +39,9 @@ public class RuleExecutionRecord {
     @Column(value = "error_message", type = "TEXT", comment = "错误信息")
     private String errorMessage;
 
+    @Column(value = "tenant_id", length = 50, defaultValue = "DEFAULT", comment = "租户ID")
+    private String tenantId;
+
     @TableField(fill = FieldFill.INSERT)
     @Column(value = "created_at", comment = "创建时间")
     private LocalDateTime createdAt;

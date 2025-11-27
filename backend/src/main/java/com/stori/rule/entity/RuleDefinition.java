@@ -35,6 +35,9 @@ public class RuleDefinition {
     
     @Column(value = "drl_content", type = "TEXT", comment = "生成的DRL代码")
     private String drlContent;
+
+    @Column(value = "tenant_id", length = 50, defaultValue = "DEFAULT", comment = "租户ID")
+    private String tenantId;
     
     @TableField(fill = FieldFill.INSERT)
     @Column(value = "created_at", comment = "创建时间")
@@ -64,6 +67,9 @@ public class RuleDefinition {
 
     public String getDrlContent() { return drlContent; }
     public void setDrlContent(String drlContent) { this.drlContent = drlContent; }
+
+    public String getTenantId() { return tenantId; }
+    public void setTenantId(String tenantId) { this.tenantId = tenantId; }
 
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }

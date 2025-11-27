@@ -3,3 +3,92 @@
   display: none;
 }
 
+.editor-toolbar-panel {
+  background: var(--bg-card) !important;
+  padding: 8px;
+  border-radius: 8px;
+  border: var(--glass-border) !important;
+  display: flex;
+  gap: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.editor-toolbar-button.ant-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border-color: transparent;
+  color: var(--text-primary);
+  transition: all 0.3s;
+
+  &:hover {
+    color: var(--primary-color);
+    background: rgba(255, 255, 255, 0.1);
+    transform: translateY(-1px);
+  }
+
+  &[disabled] {
+    color: rgba(255, 255, 255, 0.25);
+    border-color: rgba(255, 255, 255, 0.15);
+    background-color: rgba(255, 255, 255, 0.05);
+    cursor: not-allowed;
+    transform: none;
+  }
+}
+
+[data-theme='light'] {
+  .editor-toolbar-button.ant-btn {
+    &:hover {
+      background: rgba(0, 0, 0, 0.05);
+    }
+
+    &[disabled] {
+      color: rgba(0, 0, 0, 0.25);
+      border-color: rgba(0, 0, 0, 0.15);
+      background-color: rgba(0, 0, 0, 0.05);
+    }
+  }
+}
+
+/* Custom Node Handle Styles */
+.custom-node-handle {
+  width: 10px !important;
+  height: 10px !important;
+  border: 2px solid var(--bg-card);
+  transition: all 0.2s;
+  z-index: 10;
+
+  /* Invisible hit area */
+  &::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 24px;
+    height: 24px;
+    background: transparent;
+    border-radius: 50%;
+    z-index: -1;
+  }
+
+  &:hover {
+    transform: scale(1.2);
+    box-shadow: 0 0 8px var(--primary-color);
+    border-color: #fff;
+  }
+}
+
+/* Selected Edge Styling */
+.react-flow__edge.selected {
+  .react-flow__edge-path {
+    stroke-width: 3px !important;
+    filter: drop-shadow(0 0 4px rgba(24, 144, 255, 0.6));
+  }
+}
+
+/* Ensure marker matches selected color if needed, or just glow */
+.react-flow__edge.selected .react-flow__arrowhead {
+  filter: drop-shadow(0 0 4px rgba(24, 144, 255, 0.6));
+}

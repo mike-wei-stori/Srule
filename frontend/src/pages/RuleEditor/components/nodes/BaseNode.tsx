@@ -18,7 +18,13 @@ export const BaseNode = (props: BaseNodeProps) => {
     const handleMenuClick = (e: any) => {
         console.log('BaseNode handleMenuClick:', e.key, id);
         if (data.onMenuClick) {
-            data.onMenuClick(e.key, id);
+            // Check if key contains sourceHandle info (e.g. "addDecision:true")
+            if (e.key.includes(':')) {
+                const [action, sourceHandle] = e.key.split(':');
+                data.onMenuClick(action, id, sourceHandle);
+            } else {
+                data.onMenuClick(e.key, id);
+            }
         } else {
             console.error('data.onMenuClick is undefined');
         }
@@ -27,13 +33,43 @@ export const BaseNode = (props: BaseNodeProps) => {
     const getMenuItems = (): MenuProps['items'] => {
         const items: MenuProps['items'] = [];
 
+        // Add Child Node Submenu
+        const addChildItems: MenuProps['items'] = [];
+        const nodeTypes = [
+            { type: 'DECISION', label: intl.formatMessage({ id: 'pages.editor.node.decision', defaultMessage: 'Decision Node' }), action: 'addDecision' },
+            { type: 'ACTION', label: intl.formatMessage({ id: 'pages.editor.node.action', defaultMessage: 'Action Node' }), action: 'addAction' },
+            { type: 'SCRIPT', label: intl.formatMessage({ id: 'pages.editor.node.script', defaultMessage: 'Script Node' }), action: 'addScript' },
+            { type: 'LOOP', label: intl.formatMessage({ id: 'pages.editor.node.loop', defaultMessage: 'Loop Node' }), action: 'addLoop' }
+        ];
+
+        nodeTypes.forEach(nt => {
+            if (data.type === 'DECISION') {
+                // For Decision Node, allow choosing True or False branch
+                addChildItems.push({
+                    key: nt.action,
+                    label: nt.label,
+                    children: [
+                        { key: `${nt.action}:true`, label: 'True' },
+                        { key: `${nt.action}:false`, label: 'False' }
+                    ]
+                });
+            } else {
+                addChildItems.push({ key: nt.action, label: nt.label });
+            }
+        });
+
+        items.push({
+            key: 'addChild',
+            label: intl.formatMessage({ id: 'pages.editor.node.addChild', defaultMessage: 'Add Child Node' }),
+            icon: <PlusOutlined />,
+            children: addChildItems
+        });
+
         if (data.type === 'DECISION') {
             items.push({ key: 'addCondition', label: intl.formatMessage({ id: 'pages.editor.node.addCondition' }), icon: <PlusOutlined /> });
         }
 
-        if (['DECISION', 'ACTION'].includes(data.type)) {
-            items.push({ type: 'divider' });
-        }
+        items.push({ type: 'divider' });
 
         items.push({ key: 'moveUp', label: intl.formatMessage({ id: 'pages.editor.node.moveUp' }), icon: <UpOutlined /> });
         items.push({ key: 'moveDown', label: intl.formatMessage({ id: 'pages.editor.node.moveDown' }), icon: <DownOutlined /> });
@@ -56,7 +92,7 @@ export const BaseNode = (props: BaseNodeProps) => {
 
     return (
         <div style={{ position: 'relative' }}>
-            {data.type !== 'START' && <Handle type="target" position={Position.Left} style={{ width: 8, height: 8, background: 'var(--primary-color)' }} />}
+            {data.type !== 'START' && <Handle type="target" position={Position.Left} className="custom-node-handle" style={{ background: 'var(--primary-color)' }} />}
             <Dropdown
                 menu={{
                     items: getMenuItems(),
@@ -134,7 +170,7 @@ export const BaseNode = (props: BaseNodeProps) => {
                     </div>
                 </div>
             </Dropdown>
-            {sourceHandles || <Handle type="source" position={Position.Right} style={{ width: 8, height: 8, background: 'var(--primary-color)' }} />}
+            {sourceHandles || <Handle type="source" position={Position.Right} className="custom-node-handle" style={{ background: 'var(--primary-color)' }} />}
         </div>
     );
 };

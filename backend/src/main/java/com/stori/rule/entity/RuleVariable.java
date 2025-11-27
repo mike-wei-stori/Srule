@@ -35,6 +35,9 @@ public class RuleVariable {
     
     @Column(value = "feature_id", comment = "关联特征ID")
     private Long featureId;
+
+    @Column(value = "tenant_id", length = 50, defaultValue = "DEFAULT", comment = "租户ID")
+    private String tenantId;
     
     @TableField(fill = FieldFill.INSERT)
     @Column(value = "created_at", comment = "创建时间")
@@ -64,6 +67,9 @@ public class RuleVariable {
 
     public Long getFeatureId() { return featureId; }
     public void setFeatureId(Long featureId) { this.featureId = featureId; }
+
+    public String getTenantId() { return tenantId; }
+    public void setTenantId(String tenantId) { this.tenantId = tenantId; }
 
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
