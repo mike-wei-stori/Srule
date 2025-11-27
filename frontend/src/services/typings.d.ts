@@ -25,6 +25,7 @@ declare namespace API {
     createTime: string;
     updateTime: string;
     roles?: Role[];
+    permissions?: string[];
   }
 
   interface Role {

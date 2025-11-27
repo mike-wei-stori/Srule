@@ -21,6 +21,9 @@ public class UserProfileDTO {
     
     // Role information
     private List<RoleInfo> roles;
+
+    // Permissions
+    private List<String> permissions;
     
     @Data
     public static class RoleInfo {

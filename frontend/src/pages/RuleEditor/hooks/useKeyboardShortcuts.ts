@@ -26,11 +26,17 @@ export const useKeyboardShortcuts = ({
 }: UseKeyboardShortcutsProps) => {
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
+            const isInput = ['INPUT', 'TEXTAREA'].includes((e.target as HTMLElement).tagName);
+
             if ((e.ctrlKey || e.metaKey) && ['s', 'l', 'd', 'c', 'v', 'z', 'y'].includes(e.key)) {
+                // Allow default copy/paste/undo/redo in inputs
+                if (isInput && ['c', 'v', 'z', 'y'].includes(e.key)) {
+                    return;
+                }
                 e.preventDefault();
             }
 
-            if ((e.key === 'Delete' || e.key === 'Backspace') && !['INPUT', 'TEXTAREA'].includes((e.target as HTMLElement).tagName)) {
+            if ((e.key === 'Delete' || e.key === 'Backspace') && !isInput) {
                 const selected = nodes.find(n => n.selected);
                 if (selected && selected.type !== 'START') {
                     onDelete(selected.id);
@@ -53,18 +59,18 @@ export const useKeyboardShortcuts = ({
                 }
             }
 
-            if ((e.ctrlKey || e.metaKey) && e.key === 'c' && !['INPUT', 'TEXTAREA'].includes((e.target as HTMLElement).tagName)) {
+            if ((e.ctrlKey || e.metaKey) && e.key === 'c' && !isInput) {
                 const selectedNode = nodes.find(n => n.selected);
                 if (selectedNode) {
                     onCopyNode(selectedNode.id);
                 }
             }
 
-            if ((e.ctrlKey || e.metaKey) && e.key === 'v' && !['INPUT', 'TEXTAREA'].includes((e.target as HTMLElement).tagName)) {
+            if ((e.ctrlKey || e.metaKey) && e.key === 'v' && !isInput) {
                 onPasteNode();
             }
 
-            if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
+            if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !isInput) {
                 if (e.shiftKey) {
                     onRedo();
                 } else {
@@ -72,7 +78,7 @@ export const useKeyboardShortcuts = ({
                 }
             }
 
-            if ((e.ctrlKey || e.metaKey) && e.key === 'y') {
+            if ((e.ctrlKey || e.metaKey) && e.key === 'y' && !isInput) {
                 onRedo();
             }
 

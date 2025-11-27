@@ -5,6 +5,7 @@ import { PlusOutlined } from '@ant-design/icons';
 import { request, useIntl } from '@umijs/max';
 import { getRoles, createRole, updateRole, deleteRole } from '@/services/RoleController';
 import { getPermissions, getRolePermissions, assignPermissions } from '@/services/PermissionController';
+import PermissionGate from '@/components/PermissionGate';
 
 const RoleManagement: React.FC = () => {
     const actionRef = useRef<ActionType>();
@@ -96,23 +97,29 @@ const RoleManagement: React.FC = () => {
             title: intl.formatMessage({ id: 'common.actions' }),
             valueType: 'option',
             render: (_, record) => [
-                <a key="edit" onClick={() => {
-                    setCurrentRole(record);
-                    form.setFieldsValue(record);
-                    setEditModalVisible(true);
-                }}>
-                    {intl.formatMessage({ id: 'common.edit' })}
-                </a>,
-                <a key="permissions" onClick={() => {
-                    setCurrentRole(record);
-                    fetchRolePermissions(record.id);
-                    setPermissionModalVisible(true);
-                }}>
-                    {intl.formatMessage({ id: 'pages.role.permissions' })}
-                </a>,
-                <a key="delete" className="text-red-500" onClick={() => handleDelete(record.id)}>
-                    {intl.formatMessage({ id: 'common.delete' })}
-                </a>,
+                <PermissionGate permission="ROLE_UPDATE">
+                    <a key="edit" onClick={() => {
+                        setCurrentRole(record);
+                        form.setFieldsValue(record);
+                        setEditModalVisible(true);
+                    }}>
+                        {intl.formatMessage({ id: 'common.edit' })}
+                    </a>
+                </PermissionGate>,
+                <PermissionGate permission="PERMISSION_ASSIGN">
+                    <a key="permissions" onClick={() => {
+                        setCurrentRole(record);
+                        fetchRolePermissions(record.id);
+                        setPermissionModalVisible(true);
+                    }}>
+                        {intl.formatMessage({ id: 'pages.role.permissions' })}
+                    </a>
+                </PermissionGate>,
+                <PermissionGate permission="ROLE_DELETE">
+                    <a key="delete" className="text-red-500" onClick={() => handleDelete(record.id)}>
+                        {intl.formatMessage({ id: 'common.delete' })}
+                    </a>
+                </PermissionGate>,
             ],
         },
     ];
@@ -127,16 +134,18 @@ const RoleManagement: React.FC = () => {
                     labelWidth: 'auto',
                 }}
                 toolBarRender={() => [
-                    <Button
-                        type="primary"
-                        key="primary"
-                        onClick={() => {
-                            form.resetFields();
-                            setCreateModalVisible(true);
-                        }}
-                    >
-                        <PlusOutlined /> {intl.formatMessage({ id: 'common.create' })}
-                    </Button>,
+                    <PermissionGate key="create" permission="ROLE_CREATE">
+                        <Button
+                            type="primary"
+                            key="primary"
+                            onClick={() => {
+                                form.resetFields();
+                                setCreateModalVisible(true);
+                            }}
+                        >
+                            <PlusOutlined /> {intl.formatMessage({ id: 'common.create' })}
+                        </Button>
+                    </PermissionGate>,
                 ]}
                 request={async (params) => {
                     const res = await getRoles(params);

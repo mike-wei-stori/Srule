@@ -15,6 +15,7 @@ export async function getInitialState(): Promise<{
         nickname?: string;
         email?: string;
         avatar?: string;
+        permissions?: string[];
     };
 }> {
     const token = localStorage.getItem('token');
@@ -190,6 +191,14 @@ export const layout = ({ initialState, setInitialState }: any) => {
 
         // 菜单头配置
         menuHeaderRender: undefined,
+
+        // Hide menu for editor pages
+        menuRender: (props: any, defaultDom: React.ReactNode) => {
+            if (location.pathname.startsWith('/editor/')) {
+                return false;
+            }
+            return defaultDom;
+        },
 
         // 未登录时的处理
         onPageChange: () => {

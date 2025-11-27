@@ -12,10 +12,11 @@ import {
     ProFormSwitch,
     ProFormDependency,
 } from '@ant-design/pro-components';
-import { Button, message, Popconfirm, Tag } from 'antd';
-import { PlusOutlined } from '@ant-design/icons';
-import { useIntl } from '@umijs/max';
+import { Button, message, Popconfirm, Tag, List, Typography, Space, Tooltip } from 'antd';
+import { PlusOutlined, LinkOutlined } from '@ant-design/icons';
+import { useIntl, history } from '@umijs/max';
 import { getVariablesByPackage, createVariable, updateVariable, deleteVariable } from '@/services/RuleVariableController';
+import { getFeatures } from '@/services/FeatureController';
 
 interface ParameterPanelProps {
     packageId: number;
@@ -25,7 +26,22 @@ const ParameterPanel: React.FC<ParameterPanelProps> = ({ packageId }) => {
     const actionRef = useRef<ActionType>();
     const [drawerVisible, setDrawerVisible] = useState(false);
     const [currentRow, setCurrentRow] = useState<API.RuleVariable | undefined>(undefined);
+    const [features, setFeatures] = useState<API.Feature[]>([]);
     const intl = useIntl();
+
+    useEffect(() => {
+        const fetchFeatures = async () => {
+            try {
+                const res = await getFeatures({});
+                if (res.data) {
+                    setFeatures(res.data);
+                }
+            } catch (e) {
+                // Ignore
+            }
+        };
+        fetchFeatures();
+    }, []);
 
     const handleEdit = (record: API.RuleVariable) => {
         setCurrentRow(record);
@@ -80,6 +96,59 @@ const ParameterPanel: React.FC<ParameterPanelProps> = ({ packageId }) => {
                 if (record.category === 'OUTPUT') color = 'green';
                 return <Tag color={color}>{record.category}</Tag>;
             },
+        },
+        {
+            title: 'Linked Feature',
+            dataIndex: 'featureId',
+            render: (_, record) => {
+                if (record.category === 'INPUT' && record.featureId) {
+                    const feature = features.find(f => f.id === record.featureId);
+                    if (feature) {
+                        let featureParams: any[] = [];
+                        if (feature.config) {
+                            try {
+                                const config = JSON.parse(feature.config);
+                                if (config.parameters) {
+                                    featureParams = config.parameters;
+                                }
+                            } catch (e) {
+                                // ignore
+                            }
+                        }
+
+                        const content = (
+                            <div style={{ maxWidth: 300 }}>
+                                <p><strong>Code:</strong> {feature.code}</p>
+                                <p><strong>Type:</strong> {feature.type}</p>
+                                <p><strong>Return:</strong> {feature.returnType}</p>
+                                {feature.description && <p><strong>Desc:</strong> {feature.description}</p>}
+                                {featureParams.length > 0 && (
+                                    <>
+                                        <p><strong>Parameters:</strong></p>
+                                        <ul style={{ paddingLeft: 20, margin: 0 }}>
+                                            {featureParams.map((p: any) => (
+                                                <li key={p.name}>{p.name} ({p.type})</li>
+                                            ))}
+                                        </ul>
+                                    </>
+                                )}
+                            </div>
+                        );
+
+                        return (
+                            <Tooltip title={content}>
+                                <a onClick={() => window.open(`/features/${feature.id}`, '_blank')}>
+                                    <Tag color="purple" style={{ cursor: 'pointer' }}>
+                                        {feature.name} <LinkOutlined />
+                                    </Tag>
+                                </a>
+                            </Tooltip>
+                        );
+                    }
+                }
+                return '-';
+            },
+            search: false,
         },
         {
             title: 'Default Value',
@@ -192,6 +261,64 @@ const ParameterPanel: React.FC<ParameterPanelProps> = ({ packageId }) => {
                     ]}
                     rules={[{ required: true, message: 'Please select category' }]}
                 />
+
+                <ProFormDependency name={['category', 'featureId']}>
+                    {({ category, featureId }) => {
+                        if (category === 'INPUT') {
+                            const selectedFeature = features.find(f => f.id === featureId);
+                            let featureParams: any[] = [];
+                            if (selectedFeature && selectedFeature.config) {
+                                try {
+                                    const config = JSON.parse(selectedFeature.config);
+                                    if (config.parameters) {
+                                        featureParams = config.parameters;
+                                    }
+                                } catch (e) {
+                                    // ignore
+                                }
+                            }
+
+                            return (
+                                <>
+                                    <ProFormSelect
+                                        name="featureId"
+                                        label="Linked Feature"
+                                        options={features.map(f => ({ label: f.name, value: f.id }))}
+                                        placeholder="Select a feature to link"
+                                        showSearch
+                                    />
+                                    {featureId && (
+                                        <div style={{ marginBottom: 24, background: 'rgba(0,0,0,0.02)', padding: 12, borderRadius: 6 }}>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+                                                <Typography.Text strong>Feature Requirements:</Typography.Text>
+                                                <a onClick={() => window.open(`/features/${featureId}`, '_blank')}>
+                                                    <Space size={4}>
+                                                        View Feature <LinkOutlined />
+                                                    </Space>
+                                                </a>
+                                            </div>
+                                            {featureParams.length > 0 ? (
+                                                <List
+                                                    size="small"
+                                                    dataSource={featureParams}
+                                                    renderItem={(item) => (
+                                                        <List.Item>
+                                                            <Typography.Text code>{item.name}</Typography.Text>
+                                                            <Tag style={{ marginLeft: 8 }}>{item.type}</Tag>
+                                                        </List.Item>
+                                                    )}
+                                                />
+                                            ) : (
+                                                <Typography.Text type="secondary">No parameters defined for this feature.</Typography.Text>
+                                            )}
+                                        </div>
+                                    )}
+                                </>
+                            );
+                        }
+                        return null;
+                    }}
+                </ProFormDependency>
                 <ProFormSelect
                     name="type"
                     label="Type"

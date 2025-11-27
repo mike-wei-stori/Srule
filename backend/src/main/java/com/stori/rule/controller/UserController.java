@@ -33,6 +33,9 @@ public class UserController {
     @Autowired
     private SysRoleMapper roleMapper;
 
+    @Autowired
+    private com.stori.rule.mapper.SysPermissionMapper permissionMapper;
+
     private final PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
     @GetMapping
@@ -165,6 +168,12 @@ public class UserController {
                         }
                     }
                     profile.setRoles(roles);
+
+                    // Get user permissions
+                    List<com.stori.rule.entity.SysPermission> permissions = permissionMapper.selectByUserId(userId);
+                    profile.setPermissions(permissions.stream()
+                            .map(com.stori.rule.entity.SysPermission::getCode)
+                            .collect(Collectors.toList()));
                     
                     return Result.success(profile);
                 }

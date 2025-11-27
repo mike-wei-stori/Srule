@@ -1,9 +1,10 @@
 import React, { useRef } from 'react';
 import { PageContainer, ProTable, ActionType, ProColumns } from '@ant-design/pro-components';
 import { Button, Modal, Form, Input, Select, message, Popconfirm, Drawer, Space } from 'antd';
-import { PlusOutlined } from '@ant-design/icons';
+import { PlusOutlined, DeleteOutlined } from '@ant-design/icons';
 import { request, useIntl } from '@umijs/max';
 import { getFeatures, createFeature, deleteFeature, updateFeature, executeFeature } from '@/services/FeatureController';
+import PermissionGate from '@/components/PermissionGate';
 
 const FeaturePage: React.FC = () => {
   const actionRef = useRef<ActionType>();
@@ -37,11 +38,23 @@ const FeaturePage: React.FC = () => {
   const [currentFeature, setCurrentFeature] = React.useState<API.Feature | null>(null);
   const [testContext, setTestContext] = React.useState('');
   const [testResult, setTestResult] = React.useState('');
+  const [testForm] = Form.useForm();
 
   const handleTest = async () => {
     if (!currentFeature) return;
     try {
-      const context = testContext ? JSON.parse(testContext) : {};
+      let context = {};
+      // If feature has parameters defined, use form values
+      const config = currentFeature.config ? JSON.parse(currentFeature.config) : {};
+      if (config.parameters && config.parameters.length > 0) {
+        const values = await testForm.validateFields();
+        // Convert values based on type if needed, but for now string/json is fine or auto-converted by backend/frontend logic
+        context = values;
+      } else {
+        // Fallback to raw JSON
+        context = testContext ? JSON.parse(testContext) : {};
+      }
+
       const res = await executeFeature(currentFeature.id, context);
       setTestResult(JSON.stringify(res.data, null, 2));
     } catch (e) {
@@ -80,37 +93,44 @@ const FeaturePage: React.FC = () => {
       title: intl.formatMessage({ id: 'common.actions' }),
       valueType: 'option',
       render: (_, record) => [
-        <a
-          key="edit"
-          onClick={() => {
-            const configObj = record.config ? JSON.parse(record.config) : {};
-            form.setFieldsValue({
-              ...record,
-              configObj,
-            });
-            setIsModalVisible(true);
-          }}
-        >
-          {intl.formatMessage({ id: 'common.edit' })}
-        </a>,
-        <a
-          key="test"
-          onClick={() => {
-            setCurrentFeature(record);
-            setTestContext('{}');
-            setTestResult('');
-            setIsTestModalVisible(true);
-          }}
-        >
-          Test
-        </a>,
-        <Popconfirm
-          key="delete"
-          title={intl.formatMessage({ id: 'pages.feature.deleteConfirm' })}
-          onConfirm={() => handleDelete(record.id)}
-        >
-          <a>{intl.formatMessage({ id: 'common.delete' })}</a>
-        </Popconfirm>,
+        <PermissionGate permission="FEATURE_UPDATE">
+          <a
+            key="edit"
+            onClick={() => {
+              const configObj = record.config ? JSON.parse(record.config) : {};
+              form.setFieldsValue({
+                ...record,
+                configObj,
+              });
+              setIsModalVisible(true);
+            }}
+          >
+            {intl.formatMessage({ id: 'common.edit' })}
+          </a>
+        </PermissionGate>,
+        <PermissionGate permission="FEATURE_READ">
+          <a
+            key="test"
+            onClick={() => {
+              setCurrentFeature(record);
+              setTestContext('{}');
+              setTestResult('');
+              testForm.resetFields();
+              setIsTestModalVisible(true);
+            }}
+          >
+            Test
+          </a>
+        </PermissionGate>,
+        <PermissionGate permission="FEATURE_DELETE">
+          <Popconfirm
+            key="delete"
+            title={intl.formatMessage({ id: 'pages.feature.deleteConfirm' })}
+            onConfirm={() => handleDelete(record.id)}
+          >
+            <a>{intl.formatMessage({ id: 'common.delete' })}</a>
+          </Popconfirm>
+        </PermissionGate>,
       ],
     },
   ];
@@ -123,17 +143,19 @@ const FeaturePage: React.FC = () => {
         rowKey="id"
         search={{ labelWidth: 'auto' }}
         toolBarRender={() => [
-          <Button
-            key="button"
-            icon={<PlusOutlined />}
-            type="primary"
-            onClick={() => {
-              form.resetFields();
-              setIsModalVisible(true);
-            }}
-          >
-            {intl.formatMessage({ id: 'common.create' })}
-          </Button>,
+          <PermissionGate key="create" permission="FEATURE_CREATE">
+            <Button
+              key="button"
+              icon={<PlusOutlined />}
+              type="primary"
+              onClick={() => {
+                form.resetFields();
+                setIsModalVisible(true);
+              }}
+            >
+              {intl.formatMessage({ id: 'common.create' })}
+            </Button>
+          </PermissionGate>,
         ]}
         request={async (params) => {
           const res = await getFeatures(params);
@@ -281,6 +303,46 @@ const FeaturePage: React.FC = () => {
             }}
           </Form.Item>
 
+          <Form.Item label="Input Parameters Configuration">
+            <Form.List name={['configObj', 'parameters']}>
+              {(fields, { add, remove }) => (
+                <>
+                  {fields.map((field) => (
+                    <div key={field.key} style={{ display: 'flex', gap: 8, marginBottom: 8, alignItems: 'flex-start' }}>
+                      <Form.Item
+                        {...field}
+                        name={[field.name, 'name']}
+                        rules={[{ required: true, message: 'Name required' }]}
+                        style={{ flex: 1, marginBottom: 0 }}
+                      >
+                        <Input placeholder="Param Name (e.g. userId)" />
+                      </Form.Item>
+                      <Form.Item
+                        {...field}
+                        name={[field.name, 'type']}
+                        rules={[{ required: true, message: 'Type required' }]}
+                        style={{ width: 100, marginBottom: 0 }}
+                      >
+                        <Select placeholder="Type">
+                          <Select.Option value="STRING">String</Select.Option>
+                          <Select.Option value="INTEGER">Integer</Select.Option>
+                          <Select.Option value="BOOLEAN">Boolean</Select.Option>
+                          <Select.Option value="DATE">Date</Select.Option>
+                        </Select>
+                      </Form.Item>
+                      <Button type="text" danger icon={<DeleteOutlined />} onClick={() => remove(field.name)} />
+                    </div>
+                  ))}
+                  <Form.Item>
+                    <Button type="dashed" onClick={() => add()} block icon={<PlusOutlined />}>
+                      Add Input Parameter
+                    </Button>
+                  </Form.Item>
+                </>
+              )}
+            </Form.List>
+          </Form.Item>
+
           <Form.Item name="description" label={intl.formatMessage({ id: 'pages.feature.description' })}>
             <Input.TextArea />
           </Form.Item>
@@ -294,15 +356,36 @@ const FeaturePage: React.FC = () => {
         onOk={handleTest}
         okText="Execute"
       >
-        <Form layout="vertical">
-          <Form.Item label="Context (JSON)">
-            <Input.TextArea
-              rows={4}
-              value={testContext}
-              onChange={e => setTestContext(e.target.value)}
-              placeholder='{"userId": 1}'
-            />
-          </Form.Item>
+        <Form layout="vertical" form={testForm}>
+          {(() => {
+            const config = currentFeature?.config ? JSON.parse(currentFeature.config) : {};
+            if (config.parameters && config.parameters.length > 0) {
+              return (
+                <>
+                  {config.parameters.map((param: any) => (
+                    <Form.Item
+                      key={param.name}
+                      name={param.name}
+                      label={`${param.name} (${param.type})`}
+                      rules={[{ required: true }]}
+                    >
+                      <Input />
+                    </Form.Item>
+                  ))}
+                </>
+              );
+            }
+            return (
+              <Form.Item label="Context (JSON)">
+                <Input.TextArea
+                  rows={4}
+                  value={testContext}
+                  onChange={e => setTestContext(e.target.value)}
+                  placeholder='{"userId": 1}'
+                />
+              </Form.Item>
+            );
+          })()}
           <Form.Item label="Result">
             <Input.TextArea rows={4} value={testResult} readOnly />
           </Form.Item>

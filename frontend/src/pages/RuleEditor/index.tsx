@@ -13,6 +13,7 @@ const RuleEditor: React.FC = () => {
     const { packageCode } = useParams<{ packageCode: string }>();
     const intl = useIntl();
     const [packageId, setPackageId] = useState<number | null>(null);
+    const [packageName, setPackageName] = useState<string>('');
 
     useEffect(() => {
         const fetchPackage = async () => {
@@ -20,6 +21,7 @@ const RuleEditor: React.FC = () => {
                 const res = await getPackages({ code: packageCode });
                 if (res.data && res.data.length > 0) {
                     setPackageId(res.data[0].id);
+                    setPackageName(res.data[0].name);
                 }
             } catch (e) {
                 // Ignore
@@ -28,7 +30,7 @@ const RuleEditor: React.FC = () => {
         if (packageCode) fetchPackage();
     }, [packageCode]);
 
-    const editorTitle = intl.formatMessage({ id: 'menu.editor' }) + ': ' + packageCode;
+    const editorTitle = '正在编辑: ' + (packageName || packageCode);
 
     return (
         <PageContainer title={editorTitle}>

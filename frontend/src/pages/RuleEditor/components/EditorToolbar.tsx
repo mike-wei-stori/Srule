@@ -16,6 +16,7 @@ import {
     CloudUploadOutlined,
     HistoryOutlined
 } from '@ant-design/icons';
+import PermissionGate from '@/components/PermissionGate';
 
 interface EditorToolbarProps {
     onZoomIn: () => void;
@@ -71,44 +72,67 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({
 }) => {
     return (
         <Panel position="top-right" className="editor-toolbar-panel">
-            <Space>
-                <Tooltip title="Zoom In">
-                    <ToolbarButton icon={<ZoomInOutlined />} onClick={onZoomIn} />
-                </Tooltip>
-                <Tooltip title="Zoom Out">
-                    <ToolbarButton icon={<ZoomOutOutlined />} onClick={onZoomOut} />
-                </Tooltip>
-                <Tooltip title="Fit View">
-                    <ToolbarButton icon={<CompressOutlined />} onClick={onFitView} />
-                </Tooltip>
-                <Tooltip title="Auto Layout">
-                    <ToolbarButton icon={<LayoutOutlined />} onClick={onLayout} />
-                </Tooltip>
-                <Tooltip title="Copy Node (Ctrl+C)">
-                    <ToolbarButton
-                        icon={<CopyOutlined />}
-                        disabled={!hasSelection}
-                        onClick={onCopy}
-                    />
-                </Tooltip>
-                <Tooltip title="Paste Node (Ctrl+V)">
-                    <ToolbarButton icon={<SnippetsOutlined />} disabled={!hasCopiedContent} onClick={onPasteNode} />
-                </Tooltip>
-                <Tooltip title="Undo (Ctrl+Z)">
-                    <ToolbarButton icon={<UndoOutlined />} disabled={!canUndo} onClick={onUndo} />
-                </Tooltip>
-                <Tooltip title="Redo (Ctrl+Y)">
-                    <ToolbarButton icon={<RedoOutlined />} disabled={!canRedo} onClick={onRedo} />
-                </Tooltip>
-                <Tooltip title={isFullscreen ? "Exit Fullscreen" : "Fullscreen"}>
-                    <ToolbarButton
-                        icon={isFullscreen ? <FullscreenExitOutlined /> : <FullscreenOutlined />}
-                        onClick={toggleFullscreen}
-                    />
-                </Tooltip>
-                <Button type="primary" icon={<SaveOutlined />} onClick={onSave}>Save</Button>
-                <Button icon={<CloudUploadOutlined />} onClick={onPublish}>Publish</Button>
-                <Button icon={<HistoryOutlined />} onClick={onVersions}>Versions</Button>
+            <Space size={16}>
+                <Space.Compact>
+                    <Tooltip title="Zoom In">
+                        <ToolbarButton icon={<ZoomInOutlined />} onClick={onZoomIn} />
+                    </Tooltip>
+                    <Tooltip title="Zoom Out">
+                        <ToolbarButton icon={<ZoomOutOutlined />} onClick={onZoomOut} />
+                    </Tooltip>
+                    <Tooltip title="Fit View">
+                        <ToolbarButton icon={<CompressOutlined />} onClick={onFitView} />
+                    </Tooltip>
+                    <Tooltip title={isFullscreen ? "Exit Fullscreen" : "Fullscreen"}>
+                        <ToolbarButton
+                            icon={isFullscreen ? <FullscreenExitOutlined /> : <FullscreenOutlined />}
+                            onClick={toggleFullscreen}
+                        />
+                    </Tooltip>
+                </Space.Compact>
+
+                <Space.Compact>
+                    <Tooltip title="Auto Layout (Ctrl+L)">
+                        <ToolbarButton icon={<LayoutOutlined />} onClick={onLayout} />
+                    </Tooltip>
+                    <Tooltip title="Copy Node (Ctrl+C)">
+                        <ToolbarButton
+                            icon={<CopyOutlined />}
+                            disabled={!hasSelection}
+                            onClick={onCopy}
+                        />
+                    </Tooltip>
+                    <Tooltip title="Paste Node (Ctrl+V)">
+                        <ToolbarButton icon={<SnippetsOutlined />} disabled={!hasCopiedContent} onClick={onPasteNode} />
+                    </Tooltip>
+                </Space.Compact>
+
+                <Space.Compact>
+                    <Tooltip title="Undo (Ctrl+Z)">
+                        <ToolbarButton icon={<UndoOutlined />} disabled={!canUndo} onClick={onUndo} />
+                    </Tooltip>
+                    <Tooltip title="Redo (Ctrl+Y)">
+                        <ToolbarButton icon={<RedoOutlined />} disabled={!canRedo} onClick={onRedo} />
+                    </Tooltip>
+                </Space.Compact>
+
+                <Space.Compact>
+                    <PermissionGate permission="DEFINITION_SAVE">
+                        <Tooltip title="Save (Ctrl+S)">
+                            <ToolbarButton type="primary" icon={<SaveOutlined />} onClick={onSave} />
+                        </Tooltip>
+                    </PermissionGate>
+                    <PermissionGate permission="PACKAGE_PUBLISH">
+                        <Tooltip title="Publish">
+                            <ToolbarButton icon={<CloudUploadOutlined />} onClick={onPublish} />
+                        </Tooltip>
+                    </PermissionGate>
+                    <PermissionGate permission="PACKAGE_READ">
+                        <Tooltip title="Versions">
+                            <ToolbarButton icon={<HistoryOutlined />} onClick={onVersions} />
+                        </Tooltip>
+                    </PermissionGate>
+                </Space.Compact>
             </Space>
         </Panel>
     );

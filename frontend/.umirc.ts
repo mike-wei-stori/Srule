@@ -40,6 +40,12 @@ export default defineConfig({
       component: './Feature',
     },
     {
+      path: '/features/:id',
+      component: './Feature/Detail',
+      title: 'Feature Detail',
+      hideInMenu: true,
+    },
+    {
       title: 'menu.packages',
       path: '/packages',
       component: './RulePackage',
@@ -47,12 +53,16 @@ export default defineConfig({
     {
       path: '/editor/:packageCode',
       component: './RuleEditor',
-      layout: false,
+      layout: {
+        hideMenu: true,
+        hideFooter: true,
+      },
     },
     {
       title: 'menu.profile',
       path: '/profile',
       component: './Profile',
+      hideInMenu: true,
     },
     {
       title: 'menu.users',

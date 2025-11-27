@@ -24,7 +24,7 @@ export async function createVariable(body: API.RuleVariableDTO) {
 
 /** Update variable */
 export async function updateVariable(id: number, body: API.RuleVariableDTO) {
-    return request<API.Result<API.RuleVariable>>(`/ api / variables / ${id} `, {
+    return request<API.Result<API.RuleVariable>>(`/api/variables/${id}`, {
         method: 'PUT',
         headers: {
             'Content-Type': 'application/json',
@@ -35,7 +35,7 @@ export async function updateVariable(id: number, body: API.RuleVariableDTO) {
 
 /** Delete variable */
 export async function deleteVariable(id: number) {
-    return request<API.Result<string>>(`/ api / variables / ${id} `, {
+    return request<API.Result<string>>(`/api/variables/${id}`, {
         method: 'DELETE',
     });
 }

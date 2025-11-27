@@ -3,8 +3,21 @@ import { Node, Edge, Position, MarkerType } from 'reactflow';
 
 const nodeWidth = 350; // Match BaseNode maxWidth
 
+const getNodeWidth = (node: Node) => {
+    if (node.width) return node.width;
+    switch (node.type) {
+        case 'ACTION': return 450; // Wider for Action nodes with builders
+        case 'DECISION': return 350;
+        default: return 300;
+    }
+};
+
 const getNodeHeight = (node: Node) => {
     const baseHeight = 50; // Header + Padding
+
+    // Use actual height if available (from React Flow)
+    if (node.height) return node.height;
+
     switch (node.type) {
         case 'DECISION':
             const logicType = node.data.logicType || 'CONDITION';
@@ -18,7 +31,13 @@ const getNodeHeight = (node: Node) => {
             const count = Math.max(conditions.length, 1);
             return baseHeight + 30 + 30 + (count * 48) + 20;
         case 'ACTION':
-            return baseHeight + 90; // Content + Tag
+            // Header(50) + (Actions * 40) + AddButton(40) + Padding(20)
+            const actionCount = Math.max((node.data.actions || []).length, 1);
+            // Estimate height: Header + Actions + Button + Padding
+            // Each action row is approx 32px + 4px gap = 36px. 
+            // Add Button is 24px + gap.
+            // Let's be generous.
+            return baseHeight + (actionCount * 45) + 40 + 20;
         case 'START':
             return 60;
         case 'SCRIPT':
@@ -42,8 +61,8 @@ export const getLayoutedElements = (nodes: Node[], edges: Edge[], direction = 'L
     dagreGraph.setGraph({
         rankdir: direction,
         align: 'UL', // Align nodes to the top-left to respect edge order
-        ranksep: isHorizontal ? 120 : 100, // Horizontal spacing between columns
-        nodesep: isHorizontal ? 60 : 100   // Vertical spacing between nodes
+        ranksep: isHorizontal ? 300 : 150, // Increased Horizontal spacing between columns
+        nodesep: isHorizontal ? 100 : 150   // Increased Vertical spacing between nodes
     });
 
     // Helper to get rank of edge type
@@ -77,8 +96,9 @@ export const getLayoutedElements = (nodes: Node[], edges: Edge[], direction = 'L
     });
 
     sortedNodes.forEach((node) => {
+        const width = getNodeWidth(node);
         const height = getNodeHeight(node);
-        dagreGraph.setNode(node.id, { width: nodeWidth, height: height });
+        dagreGraph.setNode(node.id, { width: width, height: height });
     });
 
     // Sort edges to ensure consistent layout
@@ -192,7 +212,7 @@ export const getLayoutedElements = (nodes: Node[], edges: Edge[], direction = 'L
             moveSubtree(targetId, shift);
 
             // Advance currentY by the height of this subtree + spacing
-            currentY += bounds.height + (isHorizontal ? 60 : 100); // Use nodesep
+            currentY += bounds.height + (isHorizontal ? 100 : 150); // Use nodesep
         });
     });
 
@@ -203,8 +223,9 @@ export const getLayoutedElements = (nodes: Node[], edges: Edge[], direction = 'L
 
         // We are shifting the dagre node position (anchor=center center) to the top left
         // so it matches the React Flow node anchor point (top left).
+        const width = getNodeWidth(node);
         node.position = {
-            x: nodeWithPosition.x - nodeWidth / 2,
+            x: nodeWithPosition.x - width / 2,
             y: nodeWithPosition.y - (getNodeHeight(node) / 2),
         };
 
