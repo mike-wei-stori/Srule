@@ -9,7 +9,7 @@ const getNodeWidth = (node: Node) => {
     switch (node.type) {
         case 'ACTION': return 450; // Wider for Action nodes with builders
         case 'DECISION': return 350;
-        case 'START': return 400; // Start node can be wide with actions
+        case 'START': return 450; // Start node can be wide with actions
         default: return 300;
     }
 };
@@ -69,8 +69,8 @@ export const getLayoutedElements = (nodes: Node[], edges: Edge[], direction = 'L
     dagreGraph.setGraph({
         rankdir: direction,
         align: 'UL', // Align nodes to the top-left to respect edge order
-        ranksep: isHorizontal ? 350 : 200, // Increased Horizontal spacing between columns
-        nodesep: isHorizontal ? 150 : 200   // Increased Vertical spacing between nodes
+        ranksep: isHorizontal ? 250 : 150, // Compact Horizontal spacing
+        nodesep: isHorizontal ? 80 : 100   // Compact Vertical spacing
     });
 
     // Helper to get rank of edge type
@@ -135,94 +135,7 @@ export const getLayoutedElements = (nodes: Node[], edges: Edge[], direction = 'L
 
     dagre.layout(dagreGraph);
 
-    // Helper to get all descendants of a node
-    const getSubtreeNodes = (rootId: string): string[] => {
-        const descendants: string[] = [rootId];
-        const queue = [rootId];
-        const visited = new Set<string>([rootId]);
 
-        while (queue.length > 0) {
-            const current = queue.shift()!;
-            const children = validEdges
-                .filter(e => e.source === current)
-                .map(e => e.target)
-                .filter(id => !visited.has(id));
-
-            children.forEach(child => {
-                visited.add(child);
-                descendants.push(child);
-                queue.push(child);
-            });
-        }
-        return descendants;
-    };
-
-    // Helper to move a subtree vertically
-    const moveSubtree = (rootId: string, deltaY: number) => {
-        const descendants = getSubtreeNodes(rootId);
-        descendants.forEach(id => {
-            const node = dagreGraph.node(id);
-            if (node) {
-                node.y += deltaY;
-            }
-        });
-    };
-
-    // Helper to get bounds of a subtree
-    const getSubtreeBounds = (rootId: string) => {
-        const descendants = getSubtreeNodes(rootId);
-        let minY = Infinity;
-        let maxY = -Infinity;
-        descendants.forEach(id => {
-            const node = dagreGraph.node(id);
-            if (node) {
-                minY = Math.min(minY, node.y - node.height / 2);
-                maxY = Math.max(maxY, node.y + node.height / 2);
-            }
-        });
-        return { minY, maxY, height: maxY - minY };
-    };
-
-    // Post-processing: Enforce vertical order based on edge index
-    // Dagre might reorder nodes to minimize crossings, but we want strict manual ordering.
-    const siblingsMap = new Map<string, Edge[]>();
-    sortedEdges.forEach(edge => {
-        // Group by source only, so all children (True and False) are processed together in order
-        const key = edge.source;
-        if (!siblingsMap.has(key)) {
-            siblingsMap.set(key, []);
-        }
-        siblingsMap.get(key)?.push(edge);
-    });
-
-    siblingsMap.forEach((siblingEdges) => {
-        if (siblingEdges.length <= 1) return;
-
-        // Calculate bounds for each sibling's subtree
-        const siblingBounds = siblingEdges.map(e => ({
-            id: e.target,
-            bounds: getSubtreeBounds(e.target)
-        }));
-
-        // Find the starting Y position (top-most of the group)
-        const startY = Math.min(...siblingBounds.map(b => b.bounds.minY));
-        let currentY = startY;
-
-        // Stack siblings vertically
-        siblingEdges.forEach(edge => {
-            const targetId = edge.target;
-            const bounds = getSubtreeBounds(targetId);
-
-            // Calculate how much to shift this subtree to place it at currentY
-            // We want the top of the subtree (minY) to be at currentY
-            const shift = currentY - bounds.minY;
-
-            moveSubtree(targetId, shift);
-
-            // Advance currentY by the height of this subtree + spacing
-            currentY += bounds.height + (isHorizontal ? 100 : 150); // Use nodesep
-        });
-    });
 
     const layoutedNodes = nodes.map((node) => {
         const nodeWithPosition = dagreGraph.node(node.id);

@@ -22,34 +22,40 @@ const NodePalette: React.FC<NodePaletteProps> = ({ onDragStart }) => {
     const [collapsed, setCollapsed] = useState(true);
 
     const nodeTypes = [
-        {
-            type: 'DECISION',
-            label: intl.formatMessage({ id: 'pages.editor.node.decision' }),
-            icon: <BranchesOutlined />,
-            color: '#00f3ff',
-            description: intl.formatMessage({ id: 'pages.editor.node.decision.desc' })
-        },
-        {
-            type: 'ACTION',
-            label: intl.formatMessage({ id: 'pages.editor.node.action' }),
-            icon: <ThunderboltOutlined />,
-            color: '#bc13fe',
-            description: intl.formatMessage({ id: 'pages.editor.node.action.desc' })
-        },
-        {
-            type: 'SCRIPT',
-            label: intl.formatMessage({ id: 'pages.editor.node.script' }),
-            icon: <CodeOutlined />,
-            color: '#722ed1',
-            description: intl.formatMessage({ id: 'pages.editor.node.script.desc' })
-        },
-        {
-            type: 'LOOP',
-            label: intl.formatMessage({ id: 'pages.editor.node.loop' }),
-            icon: <SyncOutlined />,
-            color: '#13c2c2',
-            description: intl.formatMessage({ id: 'pages.editor.node.loop.desc' })
-        }
+      {
+        type: 'DECISION',
+        label: intl.formatMessage({ id: 'pages.editor.node.decision' }),
+        icon: <BranchesOutlined />,
+        color: '#00f3ff',
+        description: intl.formatMessage({
+          id: 'pages.editor.node.decision.desc',
+        }),
+      },
+      {
+        type: 'ACTION',
+        label: intl.formatMessage({ id: 'pages.editor.node.action' }),
+        icon: <ThunderboltOutlined />,
+        color: '#bc13fe',
+        description: intl.formatMessage({
+          id: 'pages.editor.node.action.desc',
+        }),
+      },
+      {
+        type: 'LOOP',
+        label: intl.formatMessage({ id: 'pages.editor.node.loop' }),
+        icon: <SyncOutlined />,
+        color: '#13c2c2',
+        description: intl.formatMessage({ id: 'pages.editor.node.loop.desc' }),
+      },
+      {
+        type: 'SCRIPT',
+        label: intl.formatMessage({ id: 'pages.editor.node.script' }),
+        icon: <CodeOutlined />,
+        color: '#722ed1',
+        description: intl.formatMessage({
+          id: 'pages.editor.node.script.desc',
+        }),
+      },
     ];
 
     return (
