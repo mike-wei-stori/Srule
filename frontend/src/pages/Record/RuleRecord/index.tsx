@@ -2,66 +2,68 @@ import { listRuleRecords } from '@/services/RecordController';
 import { PageContainer, ProTable, ProColumns } from '@ant-design/pro-components';
 import { Tag } from 'antd';
 import React from 'react';
+import { useIntl } from '@umijs/max';
 
 const RuleRecordList: React.FC = () => {
+    const intl = useIntl();
     const columns: ProColumns<any>[] = [
         {
-            title: 'ID',
+            title: intl.formatMessage({ id: 'pages.records.id', defaultMessage: 'ID' }),
             dataIndex: 'id',
             width: 80,
             search: false,
         },
         {
-            title: 'Request ID',
+            title: intl.formatMessage({ id: 'pages.records.reqId', defaultMessage: 'Request ID' }),
             dataIndex: 'reqId',
             copyable: true,
         },
         {
-            title: 'Package Code',
+            title: intl.formatMessage({ id: 'pages.records.packageCode', defaultMessage: 'Package Code' }),
             dataIndex: 'packageCode',
         },
         {
-            title: 'Status',
+            title: intl.formatMessage({ id: 'pages.records.status', defaultMessage: 'Status' }),
             dataIndex: 'status',
             valueEnum: {
-                SUCCESS: { text: 'Success', status: 'Success' },
-                FAIL: { text: 'Fail', status: 'Error' },
+                SUCCESS: { text: intl.formatMessage({ id: 'pages.records.status.success', defaultMessage: 'Success' }), status: 'Success' },
+                FAIL: { text: intl.formatMessage({ id: 'pages.records.status.fail', defaultMessage: 'Fail' }), status: 'Error' },
             },
             render: (_, record) => (
                 <Tag color={record.status === 'SUCCESS' ? 'success' : 'error'}>
-                    {record.status}
+                    {record.status === 'SUCCESS' ? intl.formatMessage({ id: 'pages.records.status.success' }) : intl.formatMessage({ id: 'pages.records.status.fail' })}
                 </Tag>
             ),
         },
         {
-            title: 'Execution Time (ms)',
+            title: intl.formatMessage({ id: 'pages.records.executionTime', defaultMessage: 'Execution Time (ms)' }),
             dataIndex: 'executionTimeMs',
             search: false,
             sorter: true,
         },
         {
-            title: 'Input Params',
+            title: intl.formatMessage({ id: 'pages.records.inputParams', defaultMessage: 'Input Params' }),
             dataIndex: 'inputParams',
             search: false,
             ellipsis: true,
             copyable: true,
         },
         {
-            title: 'Output Result',
+            title: intl.formatMessage({ id: 'pages.records.outputResult', defaultMessage: 'Output Result' }),
             dataIndex: 'outputResult',
             search: false,
             ellipsis: true,
             copyable: true,
         },
         {
-            title: 'Error Message',
+            title: intl.formatMessage({ id: 'pages.records.errorMessage', defaultMessage: 'Error Message' }),
             dataIndex: 'errorMessage',
             search: false,
             ellipsis: true,
             hideInTable: true,
         },
         {
-            title: 'Created At',
+            title: intl.formatMessage({ id: 'pages.records.createdAt', defaultMessage: 'Created At' }),
             dataIndex: 'createdAt',
             valueType: 'dateTime',
             search: false,
@@ -72,7 +74,7 @@ const RuleRecordList: React.FC = () => {
     return (
         <PageContainer>
             <ProTable<any>
-                headerTitle="Rule Execution Records"
+                headerTitle={intl.formatMessage({ id: 'pages.records.rule.title', defaultMessage: 'Rule Execution Records' })}
                 rowKey="id"
                 search={{
                     labelWidth: 'auto',

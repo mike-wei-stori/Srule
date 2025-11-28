@@ -73,9 +73,9 @@ const RulePackagePage: React.FC = () => {
             title: intl.formatMessage({ id: 'pages.package.status' }),
             dataIndex: 'status',
             valueEnum: {
-                DRAFT: { text: 'Draft', status: 'Default' },
-                PUBLISHED: { text: 'Published', status: 'Success' },
-                ARCHIVED: { text: 'Offline', status: 'Error' },
+                DRAFT: { text: intl.formatMessage({ id: 'status.draft' }), status: 'Default' },
+                PUBLISHED: { text: intl.formatMessage({ id: 'status.published' }), status: 'Success' },
+                ARCHIVED: { text: intl.formatMessage({ id: 'status.archived' }), status: 'Error' },
             },
         },
         {

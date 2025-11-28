@@ -4,10 +4,12 @@ import { Node, Edge, Position, MarkerType } from 'reactflow';
 const nodeWidth = 350; // Match BaseNode maxWidth
 
 const getNodeWidth = (node: Node) => {
+    if ((node as any).measured?.width) return (node as any).measured.width;
     if (node.width) return node.width;
     switch (node.type) {
         case 'ACTION': return 450; // Wider for Action nodes with builders
         case 'DECISION': return 350;
+        case 'START': return 400; // Start node can be wide with actions
         default: return 300;
     }
 };
@@ -16,6 +18,7 @@ const getNodeHeight = (node: Node) => {
     const baseHeight = 50; // Header + Padding
 
     // Use actual height if available (from React Flow)
+    if ((node as any).measured?.height) return (node as any).measured.height;
     if (node.height) return node.height;
 
     switch (node.type) {
@@ -39,6 +42,11 @@ const getNodeHeight = (node: Node) => {
             // Let's be generous.
             return baseHeight + (actionCount * 45) + 40 + 20;
         case 'START':
+            // Header(60) + (Actions * 40) + AddButton(40) + Padding(20)
+            const startActionCount = (node.data.actions || []).length;
+            if (startActionCount > 0) {
+                return 60 + (startActionCount * 45) + 40 + 20;
+            }
             return 60;
         case 'SCRIPT':
             return 120;
@@ -61,8 +69,8 @@ export const getLayoutedElements = (nodes: Node[], edges: Edge[], direction = 'L
     dagreGraph.setGraph({
         rankdir: direction,
         align: 'UL', // Align nodes to the top-left to respect edge order
-        ranksep: isHorizontal ? 300 : 150, // Increased Horizontal spacing between columns
-        nodesep: isHorizontal ? 100 : 150   // Increased Vertical spacing between nodes
+        ranksep: isHorizontal ? 350 : 200, // Increased Horizontal spacing between columns
+        nodesep: isHorizontal ? 150 : 200   // Increased Vertical spacing between nodes
     });
 
     // Helper to get rank of edge type

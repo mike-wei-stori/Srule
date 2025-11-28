@@ -127,7 +127,7 @@ export const layout = ({ initialState, setInitialState }: any) => {
                             window.location.reload();
                         }}
                         options={[
-                            { value: 'DEFAULT', label: 'Default' }
+                            { value: 'DEFAULT', label: intl.formatMessage({ id: 'common.default', defaultMessage: '默认' }) }
                         ]}
                     />
                 </div>
@@ -137,7 +137,7 @@ export const layout = ({ initialState, setInitialState }: any) => {
         // 右上角头像配置
         avatarProps: {
             src: initialState?.currentUser?.avatar || 'https://gw.alipayobjects.com/zos/antfincdn/XAosXuNZyF/BiazfanxmamNRoxxVxka.png',
-            title: initialState?.currentUser?.nickname || initialState?.currentUser?.username || '未登录',
+            title: initialState?.currentUser?.nickname || initialState?.currentUser?.username || intl.formatMessage({ id: 'user.notLogin', defaultMessage: '未登录' }),
             size: 'small',
             render: (props: any, dom: React.ReactNode) => {
                 if (!initialState?.currentUser) {

@@ -1,4 +1,5 @@
 import React, { memo, useState, useEffect } from 'react';
+import { useIntl } from 'umi';
 import { NodeProps } from 'reactflow';
 import { Select, Input, Space, Typography, Tag, InputNumber, DatePicker, Button, Divider, Tooltip } from 'antd';
 import { PlusOutlined, DeleteOutlined, SwapOutlined } from '@ant-design/icons';
@@ -55,6 +56,7 @@ interface ActionItem {
 
 const ListBuilder = ({ value, onChange }: { value: any[], onChange: (val: any[]) => void }) => {
     const list = Array.isArray(value) ? value : [];
+    const { formatMessage } = useIntl();
 
     const addItem = () => {
         onChange([...list, '']);
@@ -78,7 +80,7 @@ const ListBuilder = ({ value, onChange }: { value: any[], onChange: (val: any[])
                         value={item}
                         onChange={(e) => updateItem(index, e.target.value)}
                         size="small"
-                        placeholder={`Item ${index + 1}`}
+                        placeholder={`${formatMessage({ id: 'pages.actionNode.item', defaultMessage: '项' })} ${index + 1}`}
                     />
                     <Button
                         type="text"
@@ -90,7 +92,7 @@ const ListBuilder = ({ value, onChange }: { value: any[], onChange: (val: any[])
                 </div>
             ))}
             <Button type="dashed" size="small" onClick={addItem} icon={<PlusOutlined />}>
-                Add Item
+                {formatMessage({ id: 'pages.actionNode.addItem', defaultMessage: '添加项' })}
             </Button>
         </div>
     );
@@ -99,6 +101,7 @@ const ListBuilder = ({ value, onChange }: { value: any[], onChange: (val: any[])
 const MapBuilder = ({ value, onChange }: { value: any[], onChange: (val: any[]) => void }) => {
     // Value is stored as array of {key, value} objects for UI
     const entries = Array.isArray(value) ? value : [];
+    const { formatMessage } = useIntl();
 
     const addEntry = () => {
         onChange([...entries, { key: '', value: '' }]);
@@ -122,14 +125,14 @@ const MapBuilder = ({ value, onChange }: { value: any[], onChange: (val: any[]) 
                         value={entry.key}
                         onChange={(e) => updateEntry(index, 'key', e.target.value)}
                         size="small"
-                        placeholder="Key"
+                        placeholder={formatMessage({ id: 'pages.actionNode.key', defaultMessage: '键' })}
                         style={{ width: '40%' }}
                     />
                     <Input
                         value={entry.value}
                         onChange={(e) => updateEntry(index, 'value', e.target.value)}
                         size="small"
-                        placeholder="Value"
+                        placeholder={formatMessage({ id: 'pages.actionNode.value', defaultMessage: '值' })}
                         style={{ width: '60%' }}
                     />
                     <Button
@@ -142,7 +145,7 @@ const MapBuilder = ({ value, onChange }: { value: any[], onChange: (val: any[]) 
                 </div>
             ))}
             <Button type="dashed" size="small" onClick={addEntry} icon={<PlusOutlined />}>
-                Add Entry
+                {formatMessage({ id: 'pages.actionNode.addEntry', defaultMessage: '添加条目' })}
             </Button>
         </div>
     );
@@ -167,6 +170,8 @@ const ActionNode = (props: NodeProps) => {
             fetchVariables();
         }
     }, [data.packageId]);
+
+    const { formatMessage } = useIntl();
 
     // Migration for legacy single action
     useEffect(() => {
@@ -226,7 +231,7 @@ const ActionNode = (props: NodeProps) => {
                 onChange={handleChange}
                 style={{ width: '100%' }}
                 size="small"
-                placeholder="Select Variable"
+                placeholder={formatMessage({ id: 'pages.actionNode.selectVar', defaultMessage: '选择变量' })}
                 showSearch
                 optionFilterProp="children"
             >
@@ -257,6 +262,29 @@ const ActionNode = (props: NodeProps) => {
                 if (varType === 'MAP') {
                     return <MapBuilder value={action.assignmentValue} onChange={handleChange} />;
                 }
+            }
+
+            // Special handling for Map Put
+            if (varType === 'MAP' && action.operation === 'put') {
+                const mapValue = action.assignmentValue || { key: '', value: '' };
+                return (
+                    <div style={{ display: 'flex', gap: 4, width: '100%' }}>
+                        <Input
+                            value={mapValue.key}
+                            onChange={(e) => handleChange({ ...mapValue, key: e.target.value })}
+                            size="small"
+                            placeholder={formatMessage({ id: 'pages.actionNode.key', defaultMessage: '键' })}
+                            style={{ width: '40%' }}
+                        />
+                        <Input
+                            value={mapValue.value}
+                            onChange={(e) => handleChange({ ...mapValue, value: e.target.value })}
+                            size="small"
+                            placeholder={formatMessage({ id: 'pages.actionNode.value', defaultMessage: '值' })}
+                            style={{ width: '60%' }}
+                        />
+                    </div>
+                );
             }
 
             switch (varType) {
@@ -298,7 +326,7 @@ const ActionNode = (props: NodeProps) => {
                         <Input
                             value={action.assignmentValue}
                             onChange={(e) => handleChange(e.target.value)}
-                            placeholder="Value"
+                            placeholder={formatMessage({ id: 'pages.actionNode.value', defaultMessage: '值' })}
                             size="small"
                         />
                     );
@@ -310,7 +338,7 @@ const ActionNode = (props: NodeProps) => {
                 <div style={{ flex: 1 }}>
                     {inputControl}
                 </div>
-                <Tooltip title={action.isReference ? "Switch to Value" : "Switch to Reference"}>
+                <Tooltip title={action.isReference ? formatMessage({ id: 'pages.actionNode.switchToValue', defaultMessage: '切换到值' }) : formatMessage({ id: 'pages.actionNode.switchToReference', defaultMessage: '切换到引用' })}>
                     <Button
                         icon={<SwapOutlined />}
                         size="small"
@@ -327,7 +355,7 @@ const ActionNode = (props: NodeProps) => {
             {/* Header Content */}
             <Space size={4} align="center">
                 <Text style={{ fontSize: 14 }}>🟢</Text>
-                <Text strong style={{ fontSize: 12 }}>ACTION</Text>
+                <Text strong style={{ fontSize: 12 }}>{formatMessage({ id: 'pages.actionNode.title', defaultMessage: '动作节点' })}</Text>
             </Space>
 
             {/* Body Content */}
@@ -401,7 +429,7 @@ const ActionNode = (props: NodeProps) => {
                     icon={<PlusOutlined />}
                     onClick={addAction}
                 >
-                    Add Action
+                    {formatMessage({ id: 'pages.actionNode.addAction', defaultMessage: '添加动作' })}
                 </Button>
             </Space>
         </BaseNode>

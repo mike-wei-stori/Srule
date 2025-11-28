@@ -1,4 +1,5 @@
 import React, { useCallback } from 'react';
+import { useIntl } from 'umi';
 import { Menu, MenuProps } from 'antd';
 import {
     SnippetsOutlined,
@@ -39,10 +40,12 @@ const CanvasContextMenu: React.FC<CanvasContextMenuProps> = ({
         onClose();
     };
 
+    const { formatMessage } = useIntl();
+
     const items: MenuProps['items'] = [
         {
             key: 'paste',
-            label: '粘贴节点',
+            label: formatMessage({ id: 'pages.editor.contextMenu.paste', defaultMessage: '粘贴节点' }),
             icon: <SnippetsOutlined />
         },
         {
@@ -50,22 +53,22 @@ const CanvasContextMenu: React.FC<CanvasContextMenuProps> = ({
         },
         {
             key: 'add_DECISION',
-            label: '添加决策节点',
+            label: formatMessage({ id: 'pages.editor.contextMenu.addDecision', defaultMessage: '添加决策节点' }),
             icon: <BranchesOutlined style={{ color: '#1890ff' }} />
         },
         {
             key: 'add_ACTION',
-            label: '添加动作节点',
+            label: formatMessage({ id: 'pages.editor.contextMenu.addAction', defaultMessage: '添加动作节点' }),
             icon: <ThunderboltOutlined style={{ color: '#52c41a' }} />
         },
         {
             key: 'add_SCRIPT',
-            label: '添加脚本节点',
+            label: formatMessage({ id: 'pages.editor.contextMenu.addScript', defaultMessage: '添加脚本节点' }),
             icon: <CodeOutlined style={{ color: '#722ed1' }} />
         },
         {
             key: 'add_LOOP',
-            label: '添加循环节点',
+            label: formatMessage({ id: 'pages.editor.contextMenu.addLoop', defaultMessage: '添加循环节点' }),
             icon: <SyncOutlined style={{ color: '#13c2c2' }} />
         }
     ];

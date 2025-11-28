@@ -10,80 +10,83 @@ import {
 } from '@ant-design/pro-components';
 import { Button, Divider, Drawer, message } from 'antd';
 import React, { useRef, useState } from 'react';
+import { useIntl } from 'umi';
 import CreateForm from './components/CreateForm';
 import UpdateForm, { FormValueType } from './components/UpdateForm';
 
 const { addUser, queryUserList, deleteUser, modifyUser } =
   services.UserController;
 
-/**
- * 添加节点
- * @param fields
- */
-const handleAdd = async (fields: API.UserInfo) => {
-  const hide = message.loading('正在添加');
-  try {
-    await addUser({ ...fields });
-    hide();
-    message.success('添加成功');
-    return true;
-  } catch (error) {
-    hide();
-    message.error('添加失败请重试！');
-    return false;
-  }
-};
-
-/**
- * 更新节点
- * @param fields
- */
-const handleUpdate = async (fields: FormValueType) => {
-  const hide = message.loading('正在配置');
-  try {
-    await modifyUser(
-      {
-        userId: fields.id || '',
-      },
-      {
-        name: fields.name || '',
-        nickName: fields.nickName || '',
-        email: fields.email || '',
-      },
-    );
-    hide();
-
-    message.success('配置成功');
-    return true;
-  } catch (error) {
-    hide();
-    message.error('配置失败请重试！');
-    return false;
-  }
-};
-
-/**
- *  删除节点
- * @param selectedRows
- */
-const handleRemove = async (selectedRows: API.UserInfo[]) => {
-  const hide = message.loading('正在删除');
-  if (!selectedRows) return true;
-  try {
-    await deleteUser({
-      userId: selectedRows.find((row) => row.id)?.id || '',
-    });
-    hide();
-    message.success('删除成功，即将刷新');
-    return true;
-  } catch (error) {
-    hide();
-    message.error('删除失败，请重试');
-    return false;
-  }
-};
-
 const TableList: React.FC<unknown> = () => {
+  const { formatMessage } = useIntl();
+
+  /**
+   * 添加节点
+   * @param fields
+   */
+  const handleAdd = async (fields: API.UserInfo) => {
+    const hide = message.loading(formatMessage({ id: 'pages.table.adding', defaultMessage: '正在添加' }));
+    try {
+      await addUser({ ...fields });
+      hide();
+      message.success(formatMessage({ id: 'pages.table.addSuccess', defaultMessage: '添加成功' }));
+      return true;
+    } catch (error) {
+      hide();
+      message.error(formatMessage({ id: 'pages.table.addFailed', defaultMessage: '添加失败请重试！' }));
+      return false;
+    }
+  };
+
+  /**
+   * 更新节点
+   * @param fields
+   */
+  const handleUpdate = async (fields: FormValueType) => {
+    const hide = message.loading(formatMessage({ id: 'pages.table.configuring', defaultMessage: '正在配置' }));
+    try {
+      await modifyUser(
+        {
+          userId: fields.id || '',
+        },
+        {
+          name: fields.name || '',
+          nickName: fields.nickName || '',
+          email: fields.email || '',
+        },
+      );
+      hide();
+
+      message.success(formatMessage({ id: 'pages.table.configSuccess', defaultMessage: '配置成功' }));
+      return true;
+    } catch (error) {
+      hide();
+      message.error(formatMessage({ id: 'pages.table.configFailed', defaultMessage: '配置失败请重试！' }));
+      return false;
+    }
+  };
+
+  /**
+   *  删除节点
+   * @param selectedRows
+   */
+  const handleRemove = async (selectedRows: API.UserInfo[]) => {
+    const hide = message.loading(formatMessage({ id: 'pages.table.deleting', defaultMessage: '正在删除' }));
+    if (!selectedRows) return true;
+    try {
+      await deleteUser({
+        userId: selectedRows.find((row) => row.id)?.id || '',
+      });
+      hide();
+      message.success(formatMessage({ id: 'pages.table.deleteSuccessRefresh', defaultMessage: '删除成功，即将刷新' }));
+      return true;
+    } catch (error) {
+      hide();
+      message.error(formatMessage({ id: 'pages.table.deleteFailed', defaultMessage: '删除失败，请重试' }));
+      return false;
+    }
+  };
+
   const [createModalVisible, handleModalVisible] = useState<boolean>(false);
   const [updateModalVisible, handleUpdateModalVisible] =
     useState<boolean>(false);
@@ -93,34 +96,34 @@ const TableList: React.FC<unknown> = () => {
   const [selectedRowsState, setSelectedRows] = useState<API.UserInfo[]>([]);
   const columns: ProColumns<API.UserInfo>[] = [
     {
-      title: '名称',
+      title: formatMessage({ id: 'pages.table.name', defaultMessage: '名称' }),
       dataIndex: 'name',
-      tip: '名称是唯一的 key',
+      tip: formatMessage({ id: 'pages.table.nameTip', defaultMessage: '名称是唯一的 key' }),
       formItemProps: {
         rules: [
           {
             required: true,
-            message: '名称为必填项',
+            message: formatMessage({ id: 'pages.table.nameRequired', defaultMessage: '名称为必填项' }),
           },
         ],
       },
     },
     {
-      title: '昵称',
+      title: formatMessage({ id: 'pages.table.nickname', defaultMessage: '昵称' }),
       dataIndex: 'nickName',
       valueType: 'text',
     },
     {
-      title: '性别',
+      title: formatMessage({ id: 'pages.table.gender', defaultMessage: '性别' }),
       dataIndex: 'gender',
       hideInForm: true,
       valueEnum: {
-        0: { text: '男', status: 'MALE' },
-        1: { text: '女', status: 'FEMALE' },
+        0: { text: formatMessage({ id: 'pages.table.male', defaultMessage: '男' }), status: 'MALE' },
+        1: { text: formatMessage({ id: 'pages.table.female', defaultMessage: '女' }), status: 'FEMALE' },
       },
     },
     {
-      title: '操作',
+      title: formatMessage({ id: 'pages.table.operation', defaultMessage: '操作' }),
       dataIndex: 'option',
       valueType: 'option',
       render: (_, record) => (
@@ -131,10 +134,10 @@ const TableList: React.FC<unknown> = () => {
               setStepFormValues(record);
             }}
           >
-            配置
+            {formatMessage({ id: 'pages.table.config', defaultMessage: '配置' })}
           </a>
           <Divider type="vertical" />
-          <a href="">订阅警报</a>
+          <a href="">{formatMessage({ id: 'pages.table.subscribeAlert', defaultMessage: '订阅警报' })}</a>
         </>
       ),
     },
@@ -143,11 +146,11 @@ const TableList: React.FC<unknown> = () => {
   return (
     <PageContainer
       header={{
-        title: 'CRUD 示例',
+        title: formatMessage({ id: 'pages.table.crudExample', defaultMessage: 'CRUD 示例' }),
       }}
     >
       <ProTable<API.UserInfo>
-        headerTitle="查询表格"
+        headerTitle={formatMessage({ id: 'pages.table.searchTable', defaultMessage: '查询表格' })}
         actionRef={actionRef}
         rowKey="id"
         search={{
@@ -159,7 +162,7 @@ const TableList: React.FC<unknown> = () => {
             type="primary"
             onClick={() => handleModalVisible(true)}
           >
-            新建
+            {formatMessage({ id: 'pages.table.new', defaultMessage: '新建' })}
           </Button>,
         ]}
         request={async (params, sorter, filter) => {
@@ -184,9 +187,9 @@ const TableList: React.FC<unknown> = () => {
         <FooterToolbar
           extra={
             <div>
-              已选择{' '}
+              {formatMessage({ id: 'pages.table.selected', defaultMessage: '已选择' })}{' '}
               <a style={{ fontWeight: 600 }}>{selectedRowsState.length}</a>{' '}
-              项&nbsp;&nbsp;
+              {formatMessage({ id: 'pages.table.items', defaultMessage: '项' })}&nbsp;&nbsp;
             </div>
           }
         >
@@ -197,9 +200,9 @@ const TableList: React.FC<unknown> = () => {
               actionRef.current?.reloadAndRest?.();
             }}
           >
-            批量删除
+            {formatMessage({ id: 'pages.table.batchDelete', defaultMessage: '批量删除' })}
           </Button>
-          <Button type="primary">批量审批</Button>
+          <Button type="primary">{formatMessage({ id: 'pages.table.batchApproval', defaultMessage: '批量审批' })}</Button>
         </FooterToolbar>
       )}
       <CreateForm

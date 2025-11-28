@@ -123,6 +123,17 @@ public class DatabaseInitializer implements CommandLineRunner {
         defaultPermissions.add(createPermission("View Permissions", "PERMISSION_READ", "/api/permissions", "READ", "View permission list"));
         defaultPermissions.add(createPermission("Assign Permissions", "PERMISSION_ASSIGN", "/api/permissions", "ASSIGN", "Assign permissions to roles"));
 
+        // Menu Permissions
+        defaultPermissions.add(createPermission("Menu: Features", "MENU_FEATURES", "menu", "VIEW", "View Features menu"));
+        defaultPermissions.add(createPermission("Menu: Packages", "MENU_PACKAGES", "menu", "VIEW", "View Packages menu"));
+        defaultPermissions.add(createPermission("Menu: Users", "MENU_USERS", "menu", "VIEW", "View Users menu"));
+        defaultPermissions.add(createPermission("Menu: Roles", "MENU_ROLES", "menu", "VIEW", "View Roles menu"));
+        defaultPermissions.add(createPermission("Menu: Permissions", "MENU_PERMISSIONS", "menu", "VIEW", "View Permissions menu"));
+        defaultPermissions.add(createPermission("Menu: System Config", "MENU_SYS_CONFIG", "menu", "VIEW", "View System Config menu"));
+        defaultPermissions.add(createPermission("Menu: Records", "MENU_RECORDS", "menu", "VIEW", "View Records menu"));
+        defaultPermissions.add(createPermission("Menu: Feature Records", "MENU_RECORDS_FEATURES", "menu", "VIEW", "View Feature Records menu"));
+        defaultPermissions.add(createPermission("Menu: Rule Records", "MENU_RECORDS_RULES", "menu", "VIEW", "View Rule Records menu"));
+
         for (SysPermission permission : defaultPermissions) {
             SysPermission existing = permissionMapper.selectByCode(permission.getCode());
             if (existing == null) {
@@ -164,7 +175,9 @@ public class DatabaseInitializer implements CommandLineRunner {
                 "VARIABLE_READ", "VARIABLE_CREATE", "VARIABLE_UPDATE", "VARIABLE_DELETE",
                 "RULE_EXECUTE",
                 "RECORD_READ",
-                "DEFINITION_READ", "DEFINITION_SAVE"
+                "DEFINITION_READ", "DEFINITION_SAVE",
+                // Menu Permissions
+                "MENU_FEATURES", "MENU_PACKAGES", "MENU_RECORDS", "MENU_RECORDS_FEATURES", "MENU_RECORDS_RULES"
             );
             assignPermissionsByCode(ruleManagerRole, ruleManagerPermissions);
             log.info("Assigned {} permissions to Rule Manager role", ruleManagerPermissions.size());
@@ -181,7 +194,9 @@ public class DatabaseInitializer implements CommandLineRunner {
                 "RULE_EXECUTE",
                 "RECORD_READ",
                 "DEFINITION_READ",
-                "PACKAGE_VERSION_READ"
+                "PACKAGE_VERSION_READ",
+                // Menu Permissions
+                "MENU_FEATURES", "MENU_PACKAGES", "MENU_RECORDS", "MENU_RECORDS_FEATURES", "MENU_RECORDS_RULES"
             );
             assignPermissionsByCode(viewerRole, viewerPermissions);
             log.info("Assigned {} permissions to Viewer role", viewerPermissions.size());

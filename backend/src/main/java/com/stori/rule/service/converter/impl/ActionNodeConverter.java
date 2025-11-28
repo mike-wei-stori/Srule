@@ -221,10 +221,28 @@ public class ActionNodeConverter extends AbstractNodeConverter {
         if ("remove".equals(op)) {
             drl.append("        java.util.Map mapVal = (java.util.Map) $context.get(\"").append(target).append("\");\n");
             drl.append("        if (mapVal != null) mapVal.remove(").append(valueExpr).append(");\n");
-        } else {
-             // Default fallback
-             drl.append("        $context.put(\"").append(target).append("\", ").append(valueExpr).append(");\n");
+            return;
         }
+
+        if ("put".equals(op) && originalValue instanceof Map) {
+            Map<String, Object> valMap = (Map<String, Object>) originalValue;
+            String key = (String) valMap.get("key");
+            String value = (String) valMap.get("value");
+            
+            String valToPut = "\"" + value + "\"";
+            if (isReference(value)) {
+                 String refCode = value.substring(3);
+                 valToPut = "$context.get(\"" + refCode + "\")";
+            }
+
+            drl.append("        java.util.Map mapVal = (java.util.Map) $context.get(\"").append(target).append("\");\n");
+            drl.append("        if (mapVal == null) { mapVal = new java.util.HashMap(); $context.put(\"").append(target).append("\", mapVal); }\n");
+            drl.append("        mapVal.put(\"").append(key).append("\", ").append(valToPut).append(");\n");
+            return;
+        }
+
+        // Default fallback
+        drl.append("        $context.put(\"").append(target).append("\", ").append(valueExpr).append(");\n");
     }
 
     private String getJavaType(String type) {

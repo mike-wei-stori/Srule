@@ -30,7 +30,7 @@ const RuleEditor: React.FC = () => {
         if (packageCode) fetchPackage();
     }, [packageCode]);
 
-    const editorTitle = '正在编辑: ' + (packageName || packageCode);
+    const editorTitle = intl.formatMessage({ id: 'pages.editor.editing' }) + (packageName || packageCode);
 
     return (
         <PageContainer title={editorTitle}>
@@ -49,12 +49,12 @@ const RuleEditor: React.FC = () => {
                     {
                         key: 'parameters',
                         label: intl.formatMessage({ id: 'pages.editor.parameterConfig' }),
-                        children: packageId ? <ParameterPanel packageId={packageId} /> : <div>Loading...</div>,
+                        children: packageId ? <ParameterPanel packageId={packageId} /> : <div>{intl.formatMessage({ id: 'common.loading' })}</div>,
                     },
                     {
                         key: 'test',
                         label: intl.formatMessage({ id: 'pages.editor.testConsole' }),
-                        children: packageId && packageCode ? <TestPanel packageId={packageId} packageCode={packageCode} /> : <div>Loading...</div>,
+                        children: packageId && packageCode ? <TestPanel packageId={packageId} packageCode={packageCode} /> : <div>{intl.formatMessage({ id: 'common.loading' })}</div>,
                     },
                 ]}
             />

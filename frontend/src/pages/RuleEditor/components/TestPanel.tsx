@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Card, Form, Input, InputNumber, DatePicker, Switch, Button, Descriptions, Tag, Divider, message } from 'antd';
-import { request } from '@umijs/max';
+import { request, useIntl } from '@umijs/max';
 import { getVariablesByPackage } from '@/services/RuleVariableController';
 import { testRule } from '@/services/RuleExecutionController';
 import dayjs from 'dayjs';
@@ -15,6 +15,7 @@ const TestPanel: React.FC<TestPanelProps> = ({ packageCode, packageId }) => {
     const [variables, setVariables] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
     const [result, setResult] = useState<any>(null);
+    const intl = useIntl();
 
     useEffect(() => {
         const fetchVariables = async () => {
@@ -50,7 +51,7 @@ const TestPanel: React.FC<TestPanelProps> = ({ packageCode, packageId }) => {
                 inputs,
             });
             setResult(res.data);
-            message.success('Execution successful');
+            message.success(intl.formatMessage({ id: 'pages.test.success', defaultMessage: 'Execution successful' }));
         } catch (e) {
             // Error handled by interceptor
         } finally {
@@ -77,7 +78,7 @@ const TestPanel: React.FC<TestPanelProps> = ({ packageCode, packageId }) => {
 
     return (
         <div style={{ display: 'flex', gap: 16 }}>
-            <Card title="Test Inputs" style={{ flex: 1 }}>
+            <Card title={intl.formatMessage({ id: 'pages.test.testInputs', defaultMessage: 'Test Inputs' })} style={{ flex: 1 }}>
                 <Form form={form} layout="vertical" onFinish={onFinish}>
                     {inputVariables.map(v => (
                         <Form.Item
@@ -89,33 +90,33 @@ const TestPanel: React.FC<TestPanelProps> = ({ packageCode, packageId }) => {
                             {renderInput(v)}
                         </Form.Item>
                     ))}
-                    {inputVariables.length === 0 && <p>No INPUT variables defined.</p>}
+                    {inputVariables.length === 0 && <p>{intl.formatMessage({ id: 'pages.test.noInputVars', defaultMessage: 'No INPUT variables defined.' })}</p>}
                     <Button type="primary" htmlType="submit" loading={loading} block>
-                        Run Test
+                        {intl.formatMessage({ id: 'pages.test.run', defaultMessage: 'Run Test' })}
                     </Button>
                 </Form>
             </Card>
 
-            <Card title="Execution Results" style={{ flex: 1 }}>
+            <Card title={intl.formatMessage({ id: 'pages.test.executionResults', defaultMessage: 'Execution Results' })} style={{ flex: 1 }}>
                 {result ? (
                     <>
-                        <Divider orientation="left">Output Variables</Divider>
+                        <Divider orientation="left">{intl.formatMessage({ id: 'pages.test.outputVariables', defaultMessage: 'Output Variables' })}</Divider>
                         <Descriptions column={1} bordered>
                             {outputVariables.map(v => (
                                 <Descriptions.Item key={v.code} label={v.name}>
-                                    {result[v.code] !== undefined ? String(result[v.code]) : <Tag color="default">Not Set</Tag>}
+                                    {result[v.code] !== undefined ? String(result[v.code]) : <Tag color="default">{intl.formatMessage({ id: 'pages.test.notSet', defaultMessage: 'Not Set' })}</Tag>}
                                 </Descriptions.Item>
                             ))}
                         </Descriptions>
 
-                        <Divider orientation="left">Full Context</Divider>
+                        <Divider orientation="left">{intl.formatMessage({ id: 'pages.test.fullContext', defaultMessage: 'Full Context' })}</Divider>
                         <pre style={{ background: '#f5f5f5', padding: 12, borderRadius: 4, overflow: 'auto' }}>
                             {JSON.stringify(result, null, 2)}
                         </pre>
                     </>
                 ) : (
                     <div style={{ textAlign: 'center', color: '#999', marginTop: 32 }}>
-                        Run a test to see results
+                        {intl.formatMessage({ id: 'pages.test.runToSeeResults', defaultMessage: 'Run a test to see results' })}
                     </div>
                 )}
             </Card>

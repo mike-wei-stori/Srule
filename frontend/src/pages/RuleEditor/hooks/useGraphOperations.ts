@@ -356,6 +356,10 @@ export const useGraphOperations = ({
                     position: { x: parentNode.position.x + 250, y: parentNode.position.y },
                 };
             } else if (action === 'delete') {
+                if (parentNode.type === 'START') {
+                    message.warning(intl.formatMessage({ id: 'pages.editor.cannotDeleteStart', defaultMessage: 'Cannot delete Start node' }));
+                    return;
+                }
                 setNodes((nds) => nds.filter((node) => node.id !== parentNode.id));
                 setEdges((eds) => eds.filter((edge) => edge.source !== parentNode.id && edge.target !== parentNode.id));
             }

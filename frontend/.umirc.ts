@@ -38,6 +38,7 @@ export default defineConfig({
       title: 'menu.features',
       path: '/features',
       component: './Feature',
+      access: 'canSeeFeatures',
     },
     {
       path: '/features/:id',
@@ -49,6 +50,7 @@ export default defineConfig({
       title: 'menu.packages',
       path: '/packages',
       component: './RulePackage',
+      access: 'canSeePackages',
     },
     {
       path: '/editor/:packageCode',
@@ -68,16 +70,19 @@ export default defineConfig({
       title: 'menu.users',
       path: '/users',
       component: './User',
+      access: 'canSeeUsers',
     },
     {
       title: 'menu.roles',
       path: '/roles',
       component: './RoleManagement',
+      access: 'canSeeRoles',
     },
     {
       title: 'menu.permissions',
       path: '/permissions',
       component: './PermissionManagement',
+      access: 'canSeePermissions',
     },
     {
       title: 'menu.sysConfig',
@@ -89,18 +94,21 @@ export default defineConfig({
       name: 'records',
       title: 'menu.records',
       path: '/records',
+      access: 'canSeeRecords',
       routes: [
         {
           name: 'features',
           title: 'menu.records.features',
           path: '/records/features',
           component: './Record/FeatureRecord',
+          access: 'canSeeRecordFeatures',
         },
         {
           name: 'rules',
           title: 'menu.records.rules',
           path: '/records/rules',
           component: './Record/RuleRecord',
+          access: 'canSeeRecordRules',
         },
       ],
     },

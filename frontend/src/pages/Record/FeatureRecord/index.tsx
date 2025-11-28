@@ -1,38 +1,40 @@
 import { listFeatureRecords } from '@/services/RecordController';
 import { PageContainer, ProTable, ProColumns } from '@ant-design/pro-components';
 import React from 'react';
+import { useIntl } from '@umijs/max';
 
 const FeatureRecordList: React.FC = () => {
+    const intl = useIntl();
     const columns: ProColumns<any>[] = [
         {
-            title: 'ID',
+            title: intl.formatMessage({ id: 'pages.records.id', defaultMessage: 'ID' }),
             dataIndex: 'id',
             width: 80,
             search: false,
         },
         {
-            title: 'Request ID',
+            title: intl.formatMessage({ id: 'pages.records.reqId', defaultMessage: 'Request ID' }),
             dataIndex: 'reqId',
             copyable: true,
         },
         {
-            title: 'Feature Name',
+            title: intl.formatMessage({ id: 'pages.records.featureName', defaultMessage: 'Feature Name' }),
             dataIndex: 'featureName',
         },
         {
-            title: 'Feature Value',
+            title: intl.formatMessage({ id: 'pages.records.featureValue', defaultMessage: 'Feature Value' }),
             dataIndex: 'featureValue',
             search: false,
             ellipsis: true,
         },
         {
-            title: 'Execution Time (ms)',
+            title: intl.formatMessage({ id: 'pages.records.executionTime', defaultMessage: 'Execution Time (ms)' }),
             dataIndex: 'executionTimeMs',
             search: false,
             sorter: true,
         },
         {
-            title: 'Created At',
+            title: intl.formatMessage({ id: 'pages.records.createdAt', defaultMessage: 'Created At' }),
             dataIndex: 'createdAt',
             valueType: 'dateTime',
             search: false,
@@ -43,7 +45,7 @@ const FeatureRecordList: React.FC = () => {
     return (
         <PageContainer>
             <ProTable<any>
-                headerTitle="Feature Execution Records"
+                headerTitle={intl.formatMessage({ id: 'pages.records.feature.title', defaultMessage: 'Feature Execution Records' })}
                 rowKey="id"
                 search={{
                     labelWidth: 'auto',
