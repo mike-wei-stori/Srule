@@ -3,6 +3,7 @@ import { Handle, Position, NodeProps } from 'reactflow';
 import { Select, Input, Space, Typography, Tag } from 'antd';
 import { DownOutlined } from '@ant-design/icons';
 import { BaseNode } from './BaseNode';
+import { CompositionInput, CompositionTextArea } from '../CompositionInput';
 import { getVariablesByPackage } from '@/services/RuleVariableController';
 import { useIntl } from '@umijs/max';
 
@@ -204,10 +205,10 @@ const DecisionNode = (props: NodeProps) => {
                                             <Select.Option value="isNotNull">is not null</Select.Option>
                                         </Select>
                                         {!['isNull', 'isNotNull'].includes(c.operator) && (
-                                            <Input
+                                            <CompositionInput
                                                 className="nodrag"
                                                 value={c.value}
-                                                onChange={(e) => handleConditionChange(c.id, 'value', e.target.value)}
+                                                onChange={(e: any) => handleConditionChange(c.id, 'value', e.target.value)}
                                                 placeholder="值"
                                                 style={{ minWidth: 100, flex: 1 }}
                                                 size="small"
@@ -219,10 +220,10 @@ const DecisionNode = (props: NodeProps) => {
                         </div>
                     </Space>
                 ) : (
-                    <Input.TextArea
+                    <CompositionTextArea
                         className="nodrag"
                         value={data.expression}
-                        onChange={(e) => handleDataChange({ expression: e.target.value })}
+                        onChange={(e: any) => handleDataChange({ expression: e.target.value })}
                         placeholder="e.g. age > 18"
                         autoSize={{ minRows: 2, maxRows: 4 }}
                         style={{ fontSize: 11, borderRadius: 4 }}

@@ -4,6 +4,7 @@ import { NodeProps } from 'reactflow';
 import { Select, Input, Space, Typography, Tag, InputNumber, DatePicker, Button, Divider, Tooltip } from 'antd';
 import { PlusOutlined, DeleteOutlined, SwapOutlined } from '@ant-design/icons';
 import { BaseNode } from './BaseNode';
+import { CompositionInput } from '../CompositionInput';
 import { getVariablesByPackage } from '@/services/RuleVariableController';
 import dayjs from 'dayjs';
 
@@ -76,9 +77,9 @@ const ListBuilder = ({ value, onChange }: { value: any[], onChange: (val: any[])
         <div style={{ display: 'flex', flexDirection: 'column', gap: 4, width: '100%' }}>
             {list.map((item, index) => (
                 <div key={index} style={{ display: 'flex', gap: 4 }}>
-                    <Input
+                    <CompositionInput
                         value={item}
-                        onChange={(e) => updateItem(index, e.target.value)}
+                        onChange={(e: any) => updateItem(index, e.target.value)}
                         size="small"
                         placeholder={`${formatMessage({ id: 'pages.actionNode.item', defaultMessage: '项' })} ${index + 1}`}
                     />
@@ -121,16 +122,16 @@ const MapBuilder = ({ value, onChange }: { value: any[], onChange: (val: any[]) 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 4, width: '100%' }}>
             {entries.map((entry, index) => (
                 <div key={index} style={{ display: 'flex', gap: 4 }}>
-                    <Input
+                    <CompositionInput
                         value={entry.key}
-                        onChange={(e) => updateEntry(index, 'key', e.target.value)}
+                        onChange={(e: any) => updateEntry(index, 'key', e.target.value)}
                         size="small"
                         placeholder={formatMessage({ id: 'pages.actionNode.key', defaultMessage: '键' })}
                         style={{ width: '40%' }}
                     />
-                    <Input
+                    <CompositionInput
                         value={entry.value}
-                        onChange={(e) => updateEntry(index, 'value', e.target.value)}
+                        onChange={(e: any) => updateEntry(index, 'value', e.target.value)}
                         size="small"
                         placeholder={formatMessage({ id: 'pages.actionNode.value', defaultMessage: '值' })}
                         style={{ width: '60%' }}
@@ -269,16 +270,16 @@ const ActionNode = (props: NodeProps) => {
                 const mapValue = action.assignmentValue || { key: '', value: '' };
                 return (
                     <div style={{ display: 'flex', gap: 4, width: '100%' }}>
-                        <Input
+                        <CompositionInput
                             value={mapValue.key}
-                            onChange={(e) => handleChange({ ...mapValue, key: e.target.value })}
+                            onChange={(e: any) => handleChange({ ...mapValue, key: e.target.value })}
                             size="small"
                             placeholder={formatMessage({ id: 'pages.actionNode.key', defaultMessage: '键' })}
                             style={{ width: '40%' }}
                         />
-                        <Input
+                        <CompositionInput
                             value={mapValue.value}
-                            onChange={(e) => handleChange({ ...mapValue, value: e.target.value })}
+                            onChange={(e: any) => handleChange({ ...mapValue, value: e.target.value })}
                             size="small"
                             placeholder={formatMessage({ id: 'pages.actionNode.value', defaultMessage: '值' })}
                             style={{ width: '60%' }}
@@ -323,9 +324,9 @@ const ActionNode = (props: NodeProps) => {
                     );
                 default:
                     return (
-                        <Input
+                        <CompositionInput
                             value={action.assignmentValue}
-                            onChange={(e) => handleChange(e.target.value)}
+                            onChange={(e: any) => handleChange(e.target.value)}
                             placeholder={formatMessage({ id: 'pages.actionNode.value', defaultMessage: '值' })}
                             size="small"
                         />

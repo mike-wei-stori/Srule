@@ -3,6 +3,7 @@ import { Handle, Position, NodeProps } from 'reactflow';
 import { Select, Input, Space, Typography, Button, Tooltip } from 'antd';
 import { PlusOutlined, DeleteOutlined } from '@ant-design/icons';
 import { BaseNode } from './BaseNode';
+import { CompositionInput } from '../CompositionInput';
 import { getVariablesByPackage } from '@/services/RuleVariableController';
 import { useIntl } from '@umijs/max';
 
@@ -93,10 +94,10 @@ const SwitchNode = (props: NodeProps) => {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                     {cases.map((c: any, index: number) => (
                         <div key={c.id} style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: 4 }}>
-                            <Input
+                            <CompositionInput
                                 className="nodrag"
                                 value={c.value}
-                                onChange={(e) => updateCase(c.id, e.target.value)}
+                                onChange={(e: any) => updateCase(c.id, e.target.value)}
                                 size="small"
                                 placeholder="Value"
                                 style={{ flex: 1 }}
