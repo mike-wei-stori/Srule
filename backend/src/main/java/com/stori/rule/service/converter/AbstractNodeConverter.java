@@ -143,6 +143,10 @@ public abstract class AbstractNodeConverter implements NodeConverter {
                 case "matches": return strCheck + " && ((String)" + lhs + ").matches(" + strRhs + ")";
                 case "in": return "java.util.Arrays.asList(" + strRhs + ".split(\",\")).contains(" + lhs + ")";
                 case "not in": return "!java.util.Arrays.asList(" + strRhs + ".split(\",\")).contains(" + lhs + ")";
+                case ">": return strCheck + " && ((String)" + lhs + ").compareTo(" + strRhs + ") > 0";
+                case ">=": return strCheck + " && ((String)" + lhs + ").compareTo(" + strRhs + ") >= 0";
+                case "<": return strCheck + " && ((String)" + lhs + ").compareTo(" + strRhs + ") < 0";
+                case "<=": return strCheck + " && ((String)" + lhs + ").compareTo(" + strRhs + ") <= 0";
                 default: return "false";
             }
         }

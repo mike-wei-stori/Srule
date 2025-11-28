@@ -139,6 +139,7 @@ export const BaseNode = (props: BaseNodeProps) => {
                     onClick: handleMenuClick
                 }}
                 trigger={['contextMenu']}
+                disabled={data.readonly} // Disable context menu if readonly
             >
                 <div
                     onContextMenu={(e) => {
@@ -150,7 +151,7 @@ export const BaseNode = (props: BaseNodeProps) => {
                         backdropFilter: 'blur(10px)',
                         border: selected ? `2px solid ${getBorderColor()}` : `1px solid ${getBorderColor()}`,
                         borderRadius: 12,
-                        cursor: 'pointer',
+                        cursor: data.readonly ? 'default' : 'pointer', // Change cursor
                         minWidth: 200,
                         maxWidth: 350,
                         width: 'fit-content',
@@ -178,7 +179,7 @@ export const BaseNode = (props: BaseNodeProps) => {
                                 <span>{data.label}</span>
                             ) : (
                                 <Typography.Text
-                                    editable={{
+                                    editable={!data.readonly && { // Disable editing if readonly
                                         onChange: (val: string) => {
                                             if (data.validateNodeName) {
                                                 const error = data.validateNodeName(val, id);

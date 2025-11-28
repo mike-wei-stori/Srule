@@ -151,4 +151,40 @@ public class RulePackageController {
         GraphDto graph = JSON.parseObject(definition.getContentJson(), GraphDto.class);
         return Result.success(graph);
     }
+
+    @PostMapping("/preview")
+    @PreAuthorize("hasAuthority('PACKAGE_READ')")
+    public Result<Map<String, Object>> preview(@RequestBody Map<String, Object> request) {
+        try {
+            Long packageId = ((Number) request.get("packageId")).longValue();
+            Object graphDataObj = request.get("graphData");
+            if (graphDataObj == null) {
+                return Result.error("Graph data is missing");
+            }
+            
+            GraphDto graphData = JSON.parseObject(JSON.toJSONString(graphDataObj), GraphDto.class);
+
+            // Get package
+            RulePackage rulePackage = rulePackageService.getById(packageId);
+            if (rulePackage == null) {
+                return Result.error("Package not found");
+            }
+
+            // Convert graph to DRL
+            String drl = ruleConverterService.convertToDrl(rulePackage.getCode(), graphData);
+
+            // Construct preview data simulating a snapshot
+            Map<String, Object> snapshot = new java.util.HashMap<>();
+            Map<String, Object> ruleDef = new java.util.HashMap<>();
+            ruleDef.put("name", rulePackage.getCode() + "_main");
+            ruleDef.put("drlContent", drl);
+            
+            snapshot.put("ruleDefinitions", java.util.Collections.singletonList(ruleDef));
+
+            return Result.success(snapshot);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return Result.error("Preview failed: " + e.getMessage());
+        }
+    }
 }

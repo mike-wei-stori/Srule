@@ -1,6 +1,7 @@
 package com.stori.rule.service.impl;
 
 import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.serializer.SerializerFeature;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.stori.rule.dto.PackageSnapshot;
 import com.stori.rule.entity.*;
@@ -68,7 +69,7 @@ public class RulePackageVersionServiceImpl extends ServiceImpl<RulePackageVersio
         packageVersion.setVersion(version);
         packageVersion.setDescription(description);
         packageVersion.setContentJson(contentJson);
-        packageVersion.setSnapshotData(JSON.toJSONString(snapshot));
+        packageVersion.setSnapshotData(JSON.toJSONString(snapshot, SerializerFeature.WriteNonStringKeyAsString));
         packageVersion.setCreatedBy(createdBy);
         packageVersion.setCreatedAt(LocalDateTime.now());
         

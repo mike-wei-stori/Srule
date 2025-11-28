@@ -68,6 +68,17 @@ export async function savePackageGraph(body: { packageId: number; graphData: API
     });
 }
 
+/** Preview package graph (generate DRL without saving) */
+export async function previewPackageGraph(body: { packageId: number; graphData: API.PackageGraphData }) {
+    return request<API.Result<any>>('/api/packages/preview', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        data: body,
+    });
+}
+
 /** Publish package */
 export async function publishPackage(id: number, description: string) {
     return request<API.Result<string>>(`/api/packages/${id}/publish`, {

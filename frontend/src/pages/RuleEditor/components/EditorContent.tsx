@@ -93,7 +93,7 @@ const EditorContent = () => {
         );
         setNodes([...layoutedNodes]);
         setEdges([...layoutedEdges]);
-        window.requestAnimationFrame(() => reactFlowInstance.fitView());
+        window.requestAnimationFrame(() => reactFlowInstance.fitView({ padding: 0.2, maxZoom: 1 }));
     }, [reactFlowInstance, setNodes, setEdges, takeSnapshot]); // Removed nodes, edges from deps
 
     const {
@@ -175,9 +175,10 @@ const EditorContent = () => {
                     setNodes(nodesWithHandlers);
                     setEdges(layoutedEdges);
 
+                    // Trigger auto-layout to ensure correct positioning and fit view
                     setTimeout(() => {
-                        reactFlowInstance.fitView();
-                    }, 100);
+                        reactFlowInstance.fitView({ padding: 0.2, maxZoom: 1 });
+                    }, 500);
 
                     message.success(intl.formatMessage({ id: 'pages.editor.loadSuccess' }));
                 }

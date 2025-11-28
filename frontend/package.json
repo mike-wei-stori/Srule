@@ -18,6 +18,7 @@
     "antd": "^5.4.0",
     "axios": "^1.13.2",
     "dagre": "^0.8.5",
+    "react-diff-viewer-continued": "^3.4.0",
     "reactflow": "^11.11.4"
   },
   "devDependencies": {

@@ -74,7 +74,10 @@ declare namespace API {
     version: string;
     description?: string;
     content?: string;
-    createTime: string;
+    contentJson?: string;
+    snapshotData?: string;
+    createTime?: string;
+    createdAt?: string;
     createdBy?: string;
   }
 
