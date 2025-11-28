@@ -135,6 +135,92 @@ export const getLayoutedElements = (nodes: Node[], edges: Edge[], direction = 'L
 
     dagre.layout(dagreGraph);
 
+    // Helper to get all descendants of a node
+    const getSubtreeNodes = (rootId: string): string[] => {
+        const descendants: string[] = [rootId];
+        const queue = [rootId];
+        const visited = new Set<string>([rootId]);
+
+        while (queue.length > 0) {
+            const current = queue.shift()!;
+            const children = validEdges
+                .filter(e => e.source === current)
+                .map(e => e.target)
+                .filter(id => !visited.has(id));
+
+            children.forEach(child => {
+                visited.add(child);
+                descendants.push(child);
+                queue.push(child);
+            });
+        }
+        return descendants;
+    };
+
+    // Helper to move a subtree vertically
+    const moveSubtree = (rootId: string, deltaY: number) => {
+        const descendants = getSubtreeNodes(rootId);
+        descendants.forEach(id => {
+            const node = dagreGraph.node(id);
+            if (node) {
+                node.y += deltaY;
+            }
+        });
+    };
+
+    // Helper to get bounds of a subtree
+    const getSubtreeBounds = (rootId: string) => {
+        const descendants = getSubtreeNodes(rootId);
+        let minY = Infinity;
+        let maxY = -Infinity;
+        descendants.forEach(id => {
+            const node = dagreGraph.node(id);
+            if (node) {
+                minY = Math.min(minY, node.y - node.height / 2);
+                maxY = Math.max(maxY, node.y + node.height / 2);
+            }
+        });
+        return { minY, maxY, height: maxY - minY };
+    };
+
+    // Post-processing: Enforce vertical order based on edge index
+    const siblingsMap = new Map<string, Edge[]>();
+    sortedEdges.forEach(edge => {
+        const key = edge.source;
+        if (!siblingsMap.has(key)) {
+            siblingsMap.set(key, []);
+        }
+        siblingsMap.get(key)?.push(edge);
+    });
+
+    siblingsMap.forEach((siblingEdges) => {
+        if (siblingEdges.length <= 1) return;
+
+        // Calculate bounds for each sibling's subtree
+        const siblingBounds = siblingEdges.map(e => ({
+            id: e.target,
+            bounds: getSubtreeBounds(e.target)
+        }));
+
+        // Find the starting Y position (top-most of the group)
+        const startY = Math.min(...siblingBounds.map(b => b.bounds.minY));
+        let currentY = startY;
+
+        // Stack siblings vertically
+        siblingEdges.forEach(edge => {
+            const targetId = edge.target;
+            const bounds = getSubtreeBounds(targetId);
+
+            // Calculate how much to shift this subtree to place it at currentY
+            const shift = currentY - bounds.minY;
+
+            moveSubtree(targetId, shift);
+
+            // Advance currentY by the height of this subtree + spacing
+            currentY += bounds.height + (isHorizontal ? 80 : 100); // Use nodesep (matched with layout config)
+        });
+    });
+
 
 
     const layoutedNodes = nodes.map((node) => {

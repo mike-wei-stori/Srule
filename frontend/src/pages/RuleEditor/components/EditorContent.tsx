@@ -526,6 +526,7 @@ const EditorContent = () => {
                     attributionPosition="bottom-right"
                     connectionLineType={ConnectionLineType.Bezier}
                     connectionLineStyle={{ strokeWidth: 2, stroke: '#b1b1b7' }}
+                    deleteKeyCode={null}
                 >
                     <CanvasContextMenu
                         visible={menuVisible}

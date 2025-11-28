@@ -96,6 +96,10 @@ export const useGraphOperations = ({
         const subgraph = getDescendants(nodeId, currentNodes, currentEdges);
 
         if (subgraph.nodes.length > 0) {
+            if (subgraph.nodes[0].type === 'START') {
+                message.warning(intl.formatMessage({ id: 'pages.editor.cannotCopyStart', defaultMessage: 'Cannot copy Start node' }));
+                return;
+            }
             setCopiedSubgraph(subgraph);
             message.success(intl.formatMessage({ id: 'pages.editor.copyNode' }));
         }
