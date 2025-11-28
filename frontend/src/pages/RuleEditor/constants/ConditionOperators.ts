@@ -1,0 +1,72 @@
+export const CONDITION_OPERATORS: Record<string, { value: string; label: string }[]> = {
+    STRING: [
+        { value: '==', label: 'Equals' },
+        { value: '!=', label: 'Not Equals' },
+        { value: 'contains', label: 'Contains' },
+        { value: 'not contains', label: 'Not Contains' },
+        { value: 'startsWith', label: 'Starts With' },
+        { value: 'endsWith', label: 'Ends With' },
+        { value: 'matches', label: 'Matches Regex' },
+        { value: 'in', label: 'In' },
+        { value: 'not in', label: 'Not In' },
+        { value: 'isNull', label: 'Is Null' },
+        { value: 'isNotNull', label: 'Is Not Null' },
+    ],
+    INTEGER: [
+        { value: '==', label: '=' },
+        { value: '!=', label: '!=' },
+        { value: '>', label: '>' },
+        { value: '>=', label: '>=' },
+        { value: '<', label: '<' },
+        { value: '<=', label: '<=' },
+        { value: 'in', label: 'In' },
+        { value: 'not in', label: 'Not In' },
+        { value: 'isNull', label: 'Is Null' },
+        { value: 'isNotNull', label: 'Is Not Null' },
+    ],
+    DOUBLE: [
+        { value: '==', label: '=' },
+        { value: '!=', label: '!=' },
+        { value: '>', label: '>' },
+        { value: '>=', label: '>=' },
+        { value: '<', label: '<' },
+        { value: '<=', label: '<=' },
+        { value: 'isNull', label: 'Is Null' },
+        { value: 'isNotNull', label: 'Is Not Null' },
+    ],
+    BOOLEAN: [
+        { value: '==', label: 'Is' },
+        { value: '!=', label: 'Is Not' },
+        { value: 'isNull', label: 'Is Null' },
+        { value: 'isNotNull', label: 'Is Not Null' },
+    ],
+    DATE: [
+        { value: '==', label: 'On' },
+        { value: '!=', label: 'Not On' },
+        { value: '>', label: 'After' },
+        { value: '>=', label: 'On or After' },
+        { value: '<', label: 'Before' },
+        { value: '<=', label: 'On or Before' },
+        { value: 'isNull', label: 'Is Null' },
+        { value: 'isNotNull', label: 'Is Not Null' },
+    ],
+    LIST: [
+        { value: 'contains', label: 'Contains' },
+        { value: 'not contains', label: 'Not Contains' },
+        { value: 'isEmpty', label: 'Is Empty' },
+        { value: 'isNotEmpty', label: 'Is Not Empty' },
+        { value: 'isNull', label: 'Is Null' },
+        { value: 'isNotNull', label: 'Is Not Null' },
+    ],
+    MAP: [
+        { value: 'containsKey', label: 'Contains Key' },
+        { value: 'containsValue', label: 'Contains Value' },
+        { value: 'isEmpty', label: 'Is Empty' },
+        { value: 'isNotEmpty', label: 'Is Not Empty' },
+        { value: 'isNull', label: 'Is Null' },
+        { value: 'isNotNull', label: 'Is Not Null' },
+    ]
+};
+
+// Fallback for unknown types
+export const DEFAULT_OPERATORS = CONDITION_OPERATORS.STRING;

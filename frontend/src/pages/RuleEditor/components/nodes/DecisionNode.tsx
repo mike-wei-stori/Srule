@@ -6,6 +6,7 @@ import { BaseNode } from './BaseNode';
 import { CompositionInput, CompositionTextArea } from '../CompositionInput';
 import { getVariablesByPackage } from '@/services/RuleVariableController';
 import { useIntl } from '@umijs/max';
+import { CONDITION_OPERATORS, DEFAULT_OPERATORS } from '../../constants/ConditionOperators';
 
 const { Text } = Typography;
 
@@ -146,77 +147,68 @@ const DecisionNode = (props: NodeProps) => {
 
                         {/* Conditions List */}
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                            {(data.conditions || []).map((c: any) => (
-                                <div key={c.id} style={{ display: 'flex', flexDirection: 'column', gap: 4, padding: 4, border: '1px dashed #444', borderRadius: 4 }}>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                        <Select
-                                            className="nodrag"
-                                            popupClassName="node-dropdown"
-                                            dropdownMatchSelectWidth={false}
-                                            value={c.parameter}
-                                            onChange={(value) => handleConditionChange(c.id, 'parameter', value)}
-                                            placeholder={intl.formatMessage({ id: 'pages.editor.node.selectVariable' })}
-                                            style={{ minWidth: 120, flex: 1 }}
-                                            size="small"
-                                            suffixIcon={<DownOutlined style={{ fontSize: 10 }} />}
-                                        >
-                                            {variables.map(v => (
-                                                <Select.Option key={v.code} value={v.code}>
-                                                    <Space>
-                                                        <span>{v.name}</span>
-                                                        <Text type="secondary" style={{ fontSize: 10 }}>{v.code}</Text>
-                                                    </Space>
-                                                </Select.Option>
-                                            ))}
-                                        </Select>
-                                        <Text
-                                            type="danger"
-                                            style={{ cursor: 'pointer', fontSize: 10 }}
-                                            onClick={() => handleDeleteCondition(c.id)}
-                                        >
-                                            ✕
-                                        </Text>
-                                    </div>
-                                    <Space.Compact style={{ width: '100%' }}>
-                                        <Select
-                                            className="nodrag"
-                                            popupClassName="node-dropdown"
-                                            dropdownMatchSelectWidth={false}
-                                            value={c.operator}
-                                            onChange={(value) => handleConditionChange(c.id, 'operator', value)}
-                                            placeholder="op"
-                                            style={{ width: 80 }}
-                                            size="small"
-                                        >
-                                            <Select.Option value="==">==</Select.Option>
-                                            <Select.Option value="!=">!=</Select.Option>
-                                            <Select.Option value=">">&gt;</Select.Option>
-                                            <Select.Option value=">=">&gt;=</Select.Option>
-                                            <Select.Option value="<">&lt;</Select.Option>
-                                            <Select.Option value="<=">&lt;=</Select.Option>
-                                            <Select.Option value="contains">contains</Select.Option>
-                                            <Select.Option value="not contains">not contains</Select.Option>
-                                            <Select.Option value="startsWith">starts with</Select.Option>
-                                            <Select.Option value="endsWith">ends with</Select.Option>
-                                            <Select.Option value="matches">matches</Select.Option>
-                                            <Select.Option value="in">in</Select.Option>
-                                            <Select.Option value="not in">not in</Select.Option>
-                                            <Select.Option value="isNull">is null</Select.Option>
-                                            <Select.Option value="isNotNull">is not null</Select.Option>
-                                        </Select>
-                                        {!['isNull', 'isNotNull'].includes(c.operator) && (
-                                            <CompositionInput
+                            {(data.conditions || []).map((c: any) => {
+                                const selectedVar = variables.find(v => v.code === c.parameter);
+                                const varType = selectedVar?.type || 'STRING';
+                                const operators = CONDITION_OPERATORS[varType] || DEFAULT_OPERATORS;
+
+                                return (
+                                    <div key={c.id} style={{ display: 'flex', flexDirection: 'column', gap: 4, padding: 4, border: '1px dashed #444', borderRadius: 4 }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                            <Select
                                                 className="nodrag"
-                                                value={c.value}
-                                                onChange={(e: any) => handleConditionChange(c.id, 'value', e.target.value)}
-                                                placeholder="值"
-                                                style={{ minWidth: 100, flex: 1 }}
+                                                popupClassName="node-dropdown"
+                                                dropdownMatchSelectWidth={false}
+                                                value={c.parameter}
+                                                onChange={(value) => handleConditionChange(c.id, 'parameter', value)}
+                                                placeholder={intl.formatMessage({ id: 'pages.editor.node.selectVariable' })}
+                                                style={{ minWidth: 120, flex: 1 }}
                                                 size="small"
+                                                suffixIcon={<DownOutlined style={{ fontSize: 10 }} />}
+                                            >
+                                                {variables.map(v => (
+                                                    <Select.Option key={v.code} value={v.code}>
+                                                        <Space>
+                                                            <span>{v.name}</span>
+                                                            <Text type="secondary" style={{ fontSize: 10 }}>{v.code}</Text>
+                                                        </Space>
+                                                    </Select.Option>
+                                                ))}
+                                            </Select>
+                                            <Text
+                                                type="danger"
+                                                style={{ cursor: 'pointer', fontSize: 10 }}
+                                                onClick={() => handleDeleteCondition(c.id)}
+                                            >
+                                                ✕
+                                            </Text>
+                                        </div>
+                                        <Space.Compact style={{ width: '100%' }}>
+                                            <Select
+                                                className="nodrag"
+                                                popupClassName="node-dropdown"
+                                                dropdownMatchSelectWidth={false}
+                                                value={c.operator}
+                                                onChange={(value) => handleConditionChange(c.id, 'operator', value)}
+                                                placeholder="op"
+                                                style={{ width: 100 }}
+                                                size="small"
+                                                options={operators}
                                             />
-                                        )}
-                                    </Space.Compact>
-                                </div>
-                            ))}
+                                            {!['isNull', 'isNotNull', 'isEmpty', 'isNotEmpty'].includes(c.operator) && (
+                                                <CompositionInput
+                                                    className="nodrag"
+                                                    value={c.value}
+                                                    onChange={(e: any) => handleConditionChange(c.id, 'value', e.target.value)}
+                                                    placeholder="值"
+                                                    style={{ minWidth: 100, flex: 1 }}
+                                                    size="small"
+                                                />
+                                            )}
+                                        </Space.Compact>
+                                    </div>
+                                );
+                            })}
                         </div>
                     </Space>
                 ) : (

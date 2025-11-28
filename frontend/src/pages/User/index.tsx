@@ -1,6 +1,6 @@
 import React, { useRef } from 'react';
 import { PlusOutlined } from '@ant-design/icons';
-import { PageContainer, ActionType, ProColumns, ProTable } from '@ant-design/pro-components';
+import { PageContainer, ActionType, ProColumns, ProTable, ModalForm, ProFormText } from '@ant-design/pro-components';
 import { Button, message, Popconfirm } from 'antd';
 import { useIntl } from '@umijs/max';
 import { getUsers, createUser, updateUser, deleteUser } from '@/services/UserController';
@@ -57,6 +57,22 @@ const UserList: React.FC = () => {
                 >
                     <a>{intl.formatMessage({ id: 'common.delete' })}</a>
                 </Popconfirm>,
+                <ModalForm
+                    key="resetPassword"
+                    title={intl.formatMessage({ id: 'pages.user.resetPassword' })}
+                    trigger={<a>{intl.formatMessage({ id: 'pages.user.resetPassword' })}</a>}
+                    onFinish={async (values: any) => {
+                        await updateUser(record.id, { ...record, password: values.password } as any);
+                        message.success(intl.formatMessage({ id: 'common.success' }));
+                        return true;
+                    }}
+                >
+                    <ProFormText.Password
+                        name="password"
+                        label={intl.formatMessage({ id: 'pages.login.password' })}
+                        rules={[{ required: true }]}
+                    />
+                </ModalForm>,
             ],
         },
     ];

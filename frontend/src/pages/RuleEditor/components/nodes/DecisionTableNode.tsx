@@ -5,6 +5,8 @@ import { PlusOutlined, DeleteOutlined, DownOutlined } from '@ant-design/icons';
 import { BaseNode } from './BaseNode';
 import { getVariablesByPackage } from '@/services/RuleVariableController';
 import { useIntl } from '@umijs/max';
+import { CompositionInput, CompositionTextArea } from '../CompositionInput';
+import { CONDITION_OPERATORS, DEFAULT_OPERATORS } from '../../constants/ConditionOperators';
 
 const { Text } = Typography;
 
@@ -73,6 +75,8 @@ const DecisionTableNode = (props: NodeProps) => {
                             <div style={{ display: 'flex', gap: 4, marginBottom: 4 }}>
                                 <Select
                                     className="nodrag"
+                                    popupClassName="node-dropdown"
+                                    dropdownMatchSelectWidth={false}
                                     value={b.type}
                                     onChange={(val) => updateBranch(b.id, { type: val })}
                                     size="small"
@@ -97,46 +101,54 @@ const DecisionTableNode = (props: NodeProps) => {
                                     <Select
                                         className="nodrag"
                                         popupClassName="node-dropdown"
+                                        dropdownMatchSelectWidth={false}
                                         value={b.parameter}
                                         onChange={(val) => updateBranch(b.id, { parameter: val })}
                                         size="small"
                                         style={{ width: 120 }}
                                         placeholder="Var"
                                         showSearch
+                                        suffixIcon={<DownOutlined style={{ fontSize: 10 }} />}
                                     >
                                         {variables.map(v => (
-                                            <Select.Option key={v.code} value={v.code}>{v.name}</Select.Option>
+                                            <Select.Option key={v.code} value={v.code}>
+                                                <Space>
+                                                    <span>{v.name}</span>
+                                                    <Text type="secondary" style={{ fontSize: 10 }}>{v.code}</Text>
+                                                </Space>
+                                            </Select.Option>
                                         ))}
                                     </Select>
                                     <Select
                                         className="nodrag"
+                                        popupClassName="node-dropdown"
+                                        dropdownMatchSelectWidth={false}
                                         value={b.operator}
                                         onChange={(val) => updateBranch(b.id, { operator: val })}
                                         size="small"
-                                        style={{ width: 80 }}
-                                    >
-                                        <Select.Option value="==">==</Select.Option>
-                                        <Select.Option value="!=">!=</Select.Option>
-                                        <Select.Option value=">">&gt;</Select.Option>
-                                        <Select.Option value=">=">&gt;=</Select.Option>
-                                        <Select.Option value="<">&lt;</Select.Option>
-                                        <Select.Option value="<=">&lt;=</Select.Option>
-                                        <Select.Option value="contains">contains</Select.Option>
-                                    </Select>
-                                    <Input
-                                        className="nodrag"
-                                        value={b.value}
-                                        onChange={(e) => updateBranch(b.id, { value: e.target.value })}
-                                        size="small"
-                                        placeholder="Value"
-                                        style={{ flex: 1 }}
+                                        style={{ width: 100 }}
+                                        options={(() => {
+                                            const selectedVar = variables.find(v => v.code === b.parameter);
+                                            const varType = selectedVar?.type || 'STRING';
+                                            return CONDITION_OPERATORS[varType] || DEFAULT_OPERATORS;
+                                        })()}
                                     />
+                                    {!['isNull', 'isNotNull', 'isEmpty', 'isNotEmpty'].includes(b.operator) && (
+                                        <CompositionInput
+                                            className="nodrag"
+                                            value={b.value}
+                                            onChange={(e: any) => updateBranch(b.id, { value: e.target.value })}
+                                            size="small"
+                                            placeholder="Value"
+                                            style={{ flex: 1 }}
+                                        />
+                                    )}
                                 </div>
                             ) : (
-                                <Input.TextArea
+                                <CompositionTextArea
                                     className="nodrag"
                                     value={b.expression}
-                                    onChange={(e) => updateBranch(b.id, { expression: e.target.value })}
+                                    onChange={(e: any) => updateBranch(b.id, { expression: e.target.value })}
                                     size="small"
                                     placeholder="e.g. age > 18 && score > 60"
                                     autoSize={{ minRows: 1, maxRows: 3 }}

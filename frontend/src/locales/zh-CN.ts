@@ -125,6 +125,12 @@ export default {
     'pages.user.admin': '管理员',
     'pages.user.manager': '经理',
     'pages.user.viewer': '观察者',
+    'pages.user.resetPassword': '重置密码',
+    'pages.profile.changePassword': '修改密码',
+    'pages.profile.oldPassword': '旧密码',
+    'pages.profile.newPassword': '新密码',
+    'pages.profile.confirmPassword': '确认新密码',
+    'pages.profile.passwordMismatch': '两次输入的密码不一致',
 
     // Role Page
     'pages.role.id': 'ID',

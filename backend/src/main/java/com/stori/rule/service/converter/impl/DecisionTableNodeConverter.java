@@ -75,36 +75,7 @@ public class DecisionTableNodeConverter extends AbstractNodeConverter {
             String operator = (String) branch.getOrDefault("operator", "==");
             Object value = branch.get("value");
             
-            if (parameter == null) return "true";
-            
-            RuleVariable variable = variableMap.get(parameter);
-            String varType = variable != null ? variable.getType() : "STRING";
-            
-            String lhs = "$context.get(\"" + parameter + "\")";
-            String valStr = value != null ? value.toString() : "";
-            
-            if ("INTEGER".equalsIgnoreCase(varType) || "DOUBLE".equalsIgnoreCase(varType) || "NUMBER".equalsIgnoreCase(varType)) {
-                lhs = "((Number)" + lhs + ").doubleValue()";
-                try {
-                    Double.parseDouble(valStr);
-                } catch (NumberFormatException e) {
-                    valStr = "0";
-                }
-                return lhs + " " + operator + " " + valStr;
-            } else {
-                // String ops
-                String rhs = "\"" + valStr.replace("\"", "") + "\"";
-                
-                if ("==".equals(operator)) {
-                    return "java.util.Objects.equals(" + lhs + ", " + rhs + ")";
-                } else if ("!=".equals(operator)) {
-                    return "!java.util.Objects.equals(" + lhs + ", " + rhs + ")";
-                } else if ("contains".equals(operator)) {
-                    return lhs + " != null && ((String)" + lhs + ").contains(" + rhs + ")";
-                }
-                // Add more ops if needed
-                return "java.util.Objects.equals(" + lhs + ", " + rhs + ")";
-            }
+            return generateConditionDrl(parameter, operator, value, variableMap);
         }
     }
 }

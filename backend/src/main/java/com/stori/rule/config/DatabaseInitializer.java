@@ -9,6 +9,8 @@ import com.stori.rule.mapper.SysRolePermissionMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -28,6 +30,9 @@ public class DatabaseInitializer implements CommandLineRunner {
     private final SysRoleMapper roleMapper;
     private final SysPermissionMapper permissionMapper;
     private final SysRolePermissionMapper rolePermissionMapper;
+    private final com.stori.rule.mapper.SysUserMapper userMapper;
+    private final com.stori.rule.mapper.SysUserRoleMapper userRoleMapper;
+    private final PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
     @Override
     @Transactional
@@ -38,10 +43,43 @@ public class DatabaseInitializer implements CommandLineRunner {
             initializeRoles();
             initializePermissions();
             assignPermissionsToRoles();
+            initializeAdminUser();
             log.info("Database initialization completed successfully");
         } catch (Exception e) {
             log.error("Database initialization failed", e);
             // Don't throw exception to prevent application startup failure
+        }
+    }
+
+    /**
+     * Initialize default admin user
+     */
+    private void initializeAdminUser() {
+        String adminUsername = "admin";
+        com.stori.rule.entity.SysUser existingUser = userMapper.selectByUsername(adminUsername);
+
+        if (existingUser == null) {
+            com.stori.rule.entity.SysUser adminUser = new com.stori.rule.entity.SysUser();
+            adminUser.setUsername(adminUsername);
+            adminUser.setNickname("Administrator");
+            adminUser.setPassword(passwordEncoder.encode("admin123"));
+            adminUser.setEmail("admin@stori.com");
+            adminUser.setPhone("13800138000");
+            
+            userMapper.insert(adminUser);
+            log.info("Created default admin user: {}", adminUsername);
+            
+            // Assign ADMIN role
+            SysRole adminRole = roleMapper.selectByCode("ADMIN");
+            if (adminRole != null) {
+                com.stori.rule.entity.SysUserRole userRole = new com.stori.rule.entity.SysUserRole();
+                userRole.setUserId(adminUser.getId());
+                userRole.setRoleId(adminRole.getId());
+                userRoleMapper.insert(userRole);
+                log.info("Assigned ADMIN role to user: {}", adminUsername);
+            }
+        } else {
+            log.debug("Admin user already exists: {}", adminUsername);
         }
     }
 

@@ -121,51 +121,10 @@ public class DecisionNodeConverter extends AbstractNodeConverter {
     }
     
     private String generateSingleCondition(NodeDto node, Map<String, Object> conditionData, Map<String, RuleVariable> variableMap) {
-        // Map<String, Object> nodeData = node.getData(); // Don't use nodeData parameter
-        String parameter = (String) conditionData.get("parameter"); // Use condition-specific parameter
+        String parameter = (String) conditionData.get("parameter");
         String operator = (String) conditionData.getOrDefault("operator", "==");
         Object value = conditionData.get("value");
-        
-        if (parameter != null && (value != null || "isNull".equals(operator) || "isNotNull".equals(operator))) {
-            RuleVariable variable = variableMap.get(parameter);
-            String type = variable != null ? variable.getType() : "STRING";
-            
-            if ("INTEGER".equalsIgnoreCase(type) || "DOUBLE".equalsIgnoreCase(type) || "NUMBER".equalsIgnoreCase(type)) {
-                String lhs = "((Number)$context.get(\"" + parameter + "\")).doubleValue()";
-                String rhs = value.toString().replace("\"", "");
-                return lhs + " " + operator + " " + rhs;
-            } else {
-                String key = parameter;
-                String val = value != null ? "\"" + value.toString().replace("\"", "") + "\"" : "null";
-                
-                if ("==".equals(operator)) {
-                    return "java.util.Objects.equals($context.get(\"" + key + "\"), " + val + ")";
-                } else if ("!=".equals(operator)) {
-                    return "!java.util.Objects.equals($context.get(\"" + key + "\"), " + val + ")";
-                } else {
-                    String compOp = "";
-                    switch (operator) {
-                        case ">": compOp = "> 0"; break;
-                        case ">=": compOp = ">= 0"; break;
-                        case "<": compOp = "< 0"; break;
-                        case "<=": compOp = "<= 0"; break;
-                        case "contains": return "$context.get(\"" + key + "\") != null && ((String)$context.get(\"" + key + "\")).contains(" + val + ")";
-                        case "not contains": return "$context.get(\"" + key + "\") != null && !((String)$context.get(\"" + key + "\")).contains(" + val + ")";
-                        case "startsWith": return "$context.get(\"" + key + "\") != null && ((String)$context.get(\"" + key + "\")).startsWith(" + val + ")";
-                        case "endsWith": return "$context.get(\"" + key + "\") != null && ((String)$context.get(\"" + key + "\")).endsWith(" + val + ")";
-                        case "matches": return "$context.get(\"" + key + "\") != null && ((String)$context.get(\"" + key + "\")).matches(" + val + ")";
-                        case "in": return "java.util.Arrays.asList(" + val + ".split(\",\")).contains($context.get(\"" + key + "\"))";
-                        case "not in": return "!java.util.Arrays.asList(" + val + ".split(\",\")).contains($context.get(\"" + key + "\"))";
-                        case "isNull": return "$context.get(\"" + key + "\") == null";
-                        case "isNotNull": return "$context.get(\"" + key + "\") != null";
-                    }
-                    if (!compOp.isEmpty()) {
-                        return "$context.get(\"" + key + "\") != null && ((String)$context.get(\"" + key + "\")).compareTo(" + val + ") " + compOp;
-                    }
-                }
-            }
-        }
-        return "true";
+        return generateConditionDrl(parameter, operator, value, variableMap);
     }
 
     private String generateCondition(NodeDto node, boolean isTrue, Map<String, RuleVariable> variableMap) {

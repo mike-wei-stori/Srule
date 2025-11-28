@@ -6,6 +6,17 @@
         SELECT * FROM sys_user_role WHERE user_id = #{userId}
     </select>
 
+    <select id="selectByUserIds" resultType="com.stori.rule.entity.SysUserRole">
+        SELECT * FROM sys_user_role WHERE user_id IN
+        <foreach collection="userIds" item="userId" open="(" separator="," close=")">
+            #{userId}
+        </foreach>
+    </select>
+
+    <delete id="deleteByUserId">
+        DELETE FROM sys_user_role WHERE user_id = #{userId}
+    </delete>
+
 </mapper>
 
 

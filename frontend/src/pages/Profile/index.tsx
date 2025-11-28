@@ -87,6 +87,40 @@ const Profile: React.FC = () => {
                     </Form.Item>
                 </Form>
             </Card>
+
+            <Card title={intl.formatMessage({ id: 'pages.profile.changePassword' })} style={{ marginTop: 24 }}>
+                <Form
+                    layout="vertical"
+                    onFinish={async (values) => {
+                        if (values.newPassword !== values.confirmPassword) {
+                            message.error(intl.formatMessage({ id: 'pages.profile.passwordMismatch' }));
+                            return;
+                        }
+                        await updateProfile({ ...currentUser, password: values.newPassword } as any);
+                        message.success(intl.formatMessage({ id: 'common.success' }));
+                    }}
+                >
+                    <Form.Item
+                        label={intl.formatMessage({ id: 'pages.profile.newPassword' })}
+                        name="newPassword"
+                        rules={[{ required: true }]}
+                    >
+                        <Input.Password />
+                    </Form.Item>
+                    <Form.Item
+                        label={intl.formatMessage({ id: 'pages.profile.confirmPassword' })}
+                        name="confirmPassword"
+                        rules={[{ required: true }]}
+                    >
+                        <Input.Password />
+                    </Form.Item>
+                    <Form.Item>
+                        <Button type="primary" htmlType="submit">
+                            {intl.formatMessage({ id: 'common.save' })}
+                        </Button>
+                    </Form.Item>
+                </Form>
+            </Card>
         </PageContainer>
     );
 };

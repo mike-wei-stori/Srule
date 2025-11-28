@@ -47,9 +47,7 @@ public class UserController {
             List<Long> userIds = users.stream().map(SysUser::getId).collect(Collectors.toList());
             
             // Get all roles for these users
-            com.baomidou.mybatisplus.core.conditions.query.QueryWrapper<SysUserRole> queryWrapper = new com.baomidou.mybatisplus.core.conditions.query.QueryWrapper<>();
-            queryWrapper.in("user_id", userIds);
-            List<SysUserRole> userRoles = userRoleMapper.selectList(queryWrapper);
+            List<SysUserRole> userRoles = userRoleMapper.selectByUserIds(userIds);
             
             // Map roles to users
             java.util.Map<Long, Long> userRoleMap = userRoles.stream()
@@ -113,9 +111,7 @@ public class UserController {
         
         if (success && userDto.getRoleId() != null) {
             // Delete existing roles
-            com.baomidou.mybatisplus.core.conditions.query.QueryWrapper<SysUserRole> queryWrapper = new com.baomidou.mybatisplus.core.conditions.query.QueryWrapper<>();
-            queryWrapper.eq("user_id", id);
-            userRoleMapper.delete(queryWrapper);
+            userRoleMapper.deleteByUserId(id);
             
             // Add new role
             SysUserRole userRole = new SysUserRole();
@@ -131,9 +127,7 @@ public class UserController {
     @PreAuthorize("hasAuthority('USER_DELETE')")
     public Result<Boolean> delete(@PathVariable Long id) {
         // Delete user roles first
-        com.baomidou.mybatisplus.core.conditions.query.QueryWrapper<SysUserRole> queryWrapper = new com.baomidou.mybatisplus.core.conditions.query.QueryWrapper<>();
-        queryWrapper.eq("user_id", id);
-        userRoleMapper.delete(queryWrapper);
+        userRoleMapper.deleteByUserId(id);
         
         return Result.success(userMapper.deleteById(id) > 0);
     }
@@ -190,6 +184,15 @@ public class UserController {
             if (com.stori.rule.utils.JwtUtils.validateToken(token)) {
                 Long userId = com.stori.rule.utils.JwtUtils.getUserId(token);
                 user.setId(userId);
+                
+                // Hash password if provided
+                if (user.getPassword() != null && !user.getPassword().isEmpty()) {
+                    user.setPassword(passwordEncoder.encode(user.getPassword()));
+                } else {
+                    // If password is empty/null, don't update it
+                    user.setPassword(null);
+                }
+                
                 return Result.success(userMapper.updateById(user) > 0);
             }
         }

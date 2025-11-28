@@ -10,4 +10,6 @@ import java.util.List;
 @Mapper
 public interface SysUserRoleMapper extends BaseMapper<SysUserRole> {
     List<SysUserRole> selectByUserId(@Param("userId") Long userId);
+    List<SysUserRole> selectByUserIds(@Param("userIds") List<Long> userIds);
+    int deleteByUserId(@Param("userId") Long userId);
 }
