@@ -191,6 +191,16 @@ export default {
     'pages.editor.node.variable': '变量',
     'pages.editor.node.expression': '表达式',
     'pages.editor.node.selectVariable': '选择变量',
+    'pages.editor.node.switch': 'Switch 节点',
+    'pages.editor.node.switch.desc': '多分支 Switch 选择',
+    'pages.editor.node.switch.addCase': '添加分支',
+    'pages.editor.node.switch.case': '分支',
+    'pages.editor.node.switch.default': '默认',
+    'pages.editor.node.decisionTable': '决策表节点',
+    'pages.editor.node.decisionTable.desc': '复杂路由表',
+    'pages.editor.node.decisionTable.addBranch': '添加分支',
+    'pages.editor.node.decisionTable.condition': '条件',
+    'pages.editor.node.decisionTable.expression': '表达式',
 
     // Profile
     'pages.profile.userInfo': '用户信息',
@@ -212,6 +222,8 @@ export default {
     'pages.editor.contextMenu.paste': '粘贴节点',
     'pages.editor.contextMenu.addDecision': '添加决策节点',
     'pages.editor.contextMenu.addAction': '添加动作节点',
+    'pages.editor.contextMenu.addSwitch': '添加 Switch 节点',
+    'pages.editor.contextMenu.addDecisionTable': '添加决策表节点',
     'pages.editor.contextMenu.addScript': '添加脚本节点',
     'pages.editor.contextMenu.addLoop': '添加循环节点',
 

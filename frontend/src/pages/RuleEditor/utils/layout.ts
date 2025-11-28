@@ -7,9 +7,11 @@ const getNodeWidth = (node: Node) => {
     if ((node as any).measured?.width) return (node as any).measured.width;
     if (node.width) return node.width;
     switch (node.type) {
-        case 'ACTION': return 450; // Wider for Action nodes with builders
+        case 'ACTION': return 450;
         case 'DECISION': return 350;
-        case 'START': return 450; // Start node can be wide with actions
+        case 'START': return 450;
+        case 'SWITCH': return 350;
+        case 'DECISION_TABLE': return 500; // Decision tables are wider
         default: return 300;
     }
 };
@@ -29,25 +31,25 @@ const getNodeHeight = (node: Node) => {
             }
             // CONDITION
             const conditions = node.data.conditions || [];
-            // Type(30) + Logic(30) + Conditions(45 * n)
-            // If no conditions, it might have empty state or 1 empty condition
             const count = Math.max(conditions.length, 1);
             return baseHeight + 30 + 30 + (count * 48) + 20;
         case 'ACTION':
-            // Header(50) + (Actions * 40) + AddButton(40) + Padding(20)
             const actionCount = Math.max((node.data.actions || []).length, 1);
-            // Estimate height: Header + Actions + Button + Padding
-            // Each action row is approx 32px + 4px gap = 36px. 
-            // Add Button is 24px + gap.
-            // Let's be generous.
             return baseHeight + (actionCount * 45) + 40 + 20;
         case 'START':
-            // Header(60) + (Actions * 40) + AddButton(40) + Padding(20)
             const startActionCount = (node.data.actions || []).length;
             if (startActionCount > 0) {
                 return 60 + (startActionCount * 45) + 40 + 20;
             }
             return 60;
+        case 'SWITCH':
+            // Header(40) + Variable(40) + (Cases * 40) + AddBtn(40) + Default(40) + Padding(20)
+            const caseCount = (node.data.cases || []).length;
+            return 180 + (caseCount * 45);
+        case 'DECISION_TABLE':
+            // Header(40) + (Branches * 40) + AddBtn(40) + Padding(20)
+            const branchCount = (node.data.branches || []).length;
+            return 100 + (branchCount * 50);
         case 'SCRIPT':
             return 120;
         case 'LOOP':
@@ -70,7 +72,7 @@ export const getLayoutedElements = (nodes: Node[], edges: Edge[], direction = 'L
         rankdir: direction,
         align: 'UL', // Align nodes to the top-left to respect edge order
         ranksep: isHorizontal ? 250 : 150, // Compact Horizontal spacing
-        nodesep: isHorizontal ? 80 : 100   // Compact Vertical spacing
+        nodesep: isHorizontal ? 100 : 100   // Compact Vertical spacing
     });
 
     // Helper to get rank of edge type

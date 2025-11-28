@@ -351,6 +351,22 @@ export const useGraphOperations = ({
                     data: { label, type: 'SCRIPT', scriptType: 'GROOVY', scriptContent: '', packageId, onChange: onNodeDataChange, validateNodeName },
                     position: { x: parentNode.position.x + 250, y: parentNode.position.y },
                 };
+            } else if (action === 'addSwitch') {
+                const label = generateNodeName('SWITCH');
+                newNode = {
+                    id: newId,
+                    type: 'SWITCH',
+                    data: { label, type: 'SWITCH', parameter: '', cases: [], packageId, onChange: onNodeDataChange, validateNodeName },
+                    position: { x: parentNode.position.x + 250, y: parentNode.position.y },
+                };
+            } else if (action === 'addDecisionTable') {
+                const label = generateNodeName('DECISION_TABLE');
+                newNode = {
+                    id: newId,
+                    type: 'DECISION_TABLE',
+                    data: { label, type: 'DECISION_TABLE', branches: [], packageId, onChange: onNodeDataChange, validateNodeName },
+                    position: { x: parentNode.position.x + 250, y: parentNode.position.y },
+                };
             } else if (action === 'addLoop') {
                 const label = generateNodeName('LOOP');
                 newNode = {
@@ -385,6 +401,24 @@ export const useGraphOperations = ({
                         edgeSourceHandle = 'true';
                         edgeLabel = 'True';
                     }
+                } else if (parentNode.type === 'SWITCH') {
+                    if (sourceHandle === 'default') {
+                        edgeLabel = intl.formatMessage({ id: 'pages.editor.node.switch.default', defaultMessage: 'Default' });
+                    } else if (sourceHandle) {
+                        const kase = parentNode.data.cases?.find((c: any) => c.id === sourceHandle);
+                        if (kase) edgeLabel = kase.value;
+                    }
+                } else if (parentNode.type === 'DECISION_TABLE') {
+                    if (sourceHandle) {
+                        const branch = parentNode.data.branches?.find((b: any) => b.id === sourceHandle);
+                        if (branch) {
+                            if (branch.type === 'EXPRESSION') {
+                                edgeLabel = branch.expression;
+                            } else {
+                                edgeLabel = `${branch.operator || '=='} ${branch.value || ''}`;
+                            }
+                        }
+                    }
                 } else if (action === 'addCondition') {
                     edgeLabel = 'True';
                 }
@@ -394,6 +428,8 @@ export const useGraphOperations = ({
                     const val = (label || handle || '').trim().toLowerCase();
                     if (val === 'true') return { strokeWidth: 2, stroke: '#52c41a' }; // Green
                     if (val === 'false') return { strokeWidth: 2, stroke: '#ff4d4f' }; // Red
+                    if (parentNode.type === 'SWITCH') return { strokeWidth: 2, stroke: '#13c2c2' };
+                    if (parentNode.type === 'DECISION_TABLE') return { strokeWidth: 2, stroke: '#722ed1' };
                     return { strokeWidth: 2, stroke: '#b1b1b7' }; // Default Grey
                 };
 
@@ -463,6 +499,8 @@ export const useGraphOperations = ({
                 ...(type === 'LOOP' ? { collectionVariable: '' } : {}),
                 ...(type === 'DECISION' ? { parameter: '', operator: '==', value: '' } : {}),
                 ...(type === 'ACTION' ? { targetParameter: '', assignmentValue: '' } : {}),
+                ...(type === 'SWITCH' ? { parameter: '', cases: [] } : {}),
+                ...(type === 'DECISION_TABLE' ? { branches: [] } : {}),
             },
         };
 

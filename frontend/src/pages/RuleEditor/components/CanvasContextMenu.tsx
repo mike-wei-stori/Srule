@@ -7,7 +7,9 @@ import {
     FilterOutlined,
     ThunderboltOutlined,
     CodeOutlined,
-    SyncOutlined
+    SyncOutlined,
+    PartitionOutlined,
+    TableOutlined
 } from '@ant-design/icons';
 
 interface CanvasContextMenuProps {
@@ -70,6 +72,16 @@ const CanvasContextMenu: React.FC<CanvasContextMenuProps> = ({
             key: 'add_LOOP',
             label: formatMessage({ id: 'pages.editor.contextMenu.addLoop', defaultMessage: '添加循环节点' }),
             icon: <SyncOutlined style={{ color: '#13c2c2' }} />
+        },
+        {
+            key: 'add_SWITCH',
+            label: formatMessage({ id: 'pages.editor.contextMenu.addSwitch', defaultMessage: 'Add Switch' }),
+            icon: <PartitionOutlined style={{ color: '#13c2c2' }} />
+        },
+        {
+            key: 'add_DECISION_TABLE',
+            label: formatMessage({ id: 'pages.editor.contextMenu.addDecisionTable', defaultMessage: 'Add Decision Table' }),
+            icon: <TableOutlined style={{ color: '#722ed1' }} />
         }
     ];
 

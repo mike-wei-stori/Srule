@@ -187,6 +187,16 @@ export default {
     'pages.editor.node.variable': 'Variable',
     'pages.editor.node.expression': 'Expression',
     'pages.editor.node.selectVariable': 'Select Variable',
+    'pages.editor.node.switch': 'Switch Node',
+    'pages.editor.node.switch.desc': 'Multi-branch switch',
+    'pages.editor.node.switch.addCase': 'Add Case',
+    'pages.editor.node.switch.case': 'Case',
+    'pages.editor.node.switch.default': 'Default',
+    'pages.editor.node.decisionTable': 'Decision Table Node',
+    'pages.editor.node.decisionTable.desc': 'Complex routing table',
+    'pages.editor.node.decisionTable.addBranch': 'Add Branch',
+    'pages.editor.node.decisionTable.condition': 'Condition',
+    'pages.editor.node.decisionTable.expression': 'Expression',
 
     // Profile
     'pages.profile.userInfo': 'User Info',
@@ -208,6 +218,8 @@ export default {
     'pages.editor.contextMenu.paste': 'Paste Node',
     'pages.editor.contextMenu.addDecision': 'Add Decision Node',
     'pages.editor.contextMenu.addAction': 'Add Action Node',
+    'pages.editor.contextMenu.addSwitch': 'Add Switch Node',
+    'pages.editor.contextMenu.addDecisionTable': 'Add Decision Table Node',
     'pages.editor.contextMenu.addScript': 'Add Script Node',
     'pages.editor.contextMenu.addLoop': 'Add Loop Node',
 

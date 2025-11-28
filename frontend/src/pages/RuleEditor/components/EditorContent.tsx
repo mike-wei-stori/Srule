@@ -22,6 +22,8 @@ import DecisionNode from './nodes/DecisionNode';
 import ActionNode from './nodes/ActionNode';
 import ScriptNode from './nodes/ScriptNode';
 import LoopNode from './nodes/LoopNode';
+import SwitchNode from './nodes/SwitchNode';
+import DecisionTableNode from './nodes/DecisionTableNode';
 
 import NodePalette from './NodePalette';
 import CanvasContextMenu from './CanvasContextMenu';
@@ -43,6 +45,8 @@ const nodeTypes = {
     START: StartNode,
     SCRIPT: ScriptNode,
     LOOP: LoopNode,
+    SWITCH: SwitchNode,
+    DECISION_TABLE: DecisionTableNode,
 };
 
 const initialNodes: Node[] = [
@@ -253,10 +257,26 @@ const EditorContent = () => {
             } else if (params.sourceHandle === 'false') {
                 label = 'False';
             } else {
-                // Fallback: check existing edges count if handle not specific? 
-                // Getting edges from instance
                 const existingEdges = reactFlowInstance.getEdges().filter(e => e.source === params.source);
                 label = existingEdges.length === 0 ? 'True' : 'False';
+            }
+        } else if (sourceNode && sourceNode.type === 'SWITCH') {
+            if (params.sourceHandle === 'default') {
+                label = 'Default';
+            } else {
+                const kase = sourceNode.data.cases?.find((c: any) => c.id === params.sourceHandle);
+                if (kase) {
+                    label = kase.value || 'Case';
+                }
+            }
+        } else if (sourceNode && sourceNode.type === 'DECISION_TABLE') {
+            const branch = sourceNode.data.branches?.find((b: any) => b.id === params.sourceHandle);
+            if (branch) {
+                if (branch.type === 'EXPRESSION') {
+                    label = branch.expression || 'Expr';
+                } else {
+                    label = `${branch.operator || '=='} ${branch.value || ''}`;
+                }
             }
         }
 
@@ -271,6 +291,8 @@ const EditorContent = () => {
         let stroke = '#b1b1b7';
         if (val === 'true') stroke = '#52c41a';
         if (val === 'false') stroke = '#ff4d4f';
+        if (sourceNode?.type === 'SWITCH') stroke = '#13c2c2';
+        if (sourceNode?.type === 'DECISION_TABLE') stroke = '#722ed1';
 
         setEdges((eds) => addEdge({
             ...params,
@@ -450,6 +472,8 @@ const EditorContent = () => {
             case 'DECISION': return '#1890ff';
             case 'CONDITION': return '#fa8c16';
             case 'ACTION': return '#52c41a';
+            case 'SWITCH': return '#13c2c2';
+            case 'DECISION_TABLE': return '#722ed1';
             default: return '#d9d9d9';
         }
     };

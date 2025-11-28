@@ -38,6 +38,8 @@ export const BaseNode = (props: BaseNodeProps) => {
         const nodeTypes = [
             { type: 'DECISION', label: intl.formatMessage({ id: 'pages.editor.node.decision', defaultMessage: 'Decision Node' }), action: 'addDecision' },
             { type: 'ACTION', label: intl.formatMessage({ id: 'pages.editor.node.action', defaultMessage: 'Action Node' }), action: 'addAction' },
+            { type: 'SWITCH', label: intl.formatMessage({ id: 'pages.editor.node.switch', defaultMessage: 'Switch Node' }), action: 'addSwitch' },
+            { type: 'DECISION_TABLE', label: intl.formatMessage({ id: 'pages.editor.node.decisionTable', defaultMessage: 'Decision Table Node' }), action: 'addDecisionTable' },
             { type: 'SCRIPT', label: intl.formatMessage({ id: 'pages.editor.node.script', defaultMessage: 'Script Node' }), action: 'addScript' },
             { type: 'LOOP', label: intl.formatMessage({ id: 'pages.editor.node.loop', defaultMessage: 'Loop Node' }), action: 'addLoop' }
         ];
@@ -52,6 +54,44 @@ export const BaseNode = (props: BaseNodeProps) => {
                         { key: `${nt.action}:true`, label: 'True' },
                         { key: `${nt.action}:false`, label: 'False' }
                     ]
+                });
+            } else if (data.type === 'SWITCH') {
+                const switchChildren: MenuProps['items'] = [];
+                // Add cases
+                if (data.cases && Array.isArray(data.cases)) {
+                    data.cases.forEach((c: any) => {
+                        switchChildren.push({ key: `${nt.action}:${c.id}`, label: c.value || 'Case' });
+                    });
+                }
+                // Add default
+                switchChildren.push({ key: `${nt.action}:default`, label: intl.formatMessage({ id: 'pages.editor.node.switch.default', defaultMessage: 'Default' }) });
+
+                addChildItems.push({
+                    key: nt.action,
+                    label: nt.label,
+                    children: switchChildren
+                });
+            } else if (data.type === 'DECISION_TABLE') {
+                const dtChildren: MenuProps['items'] = [];
+                if (data.branches && Array.isArray(data.branches)) {
+                    data.branches.forEach((b: any, index: number) => {
+                        let label = `Branch ${index + 1}`;
+                        if (b.type === 'EXPRESSION') {
+                            label = b.expression || label;
+                        } else {
+                            label = `${b.operator || '=='} ${b.value || ''}`;
+                        }
+                        // Truncate label if too long
+                        if (label.length > 20) label = label.substring(0, 20) + '...';
+
+                        dtChildren.push({ key: `${nt.action}:${b.id}`, label });
+                    });
+                }
+
+                addChildItems.push({
+                    key: nt.action,
+                    label: nt.label,
+                    children: dtChildren
                 });
             } else {
                 addChildItems.push({ key: nt.action, label: nt.label });
