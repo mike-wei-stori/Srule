@@ -16,7 +16,6 @@ public class RuleExecutionController {
     private DroolsService droolsService;
 
     @PostMapping("/execute")
-    @PreAuthorize("hasAuthority('RULE_EXECUTE')")
     public Result<Object> execute(@RequestBody Map<String, Object> payload) {
         String packageCode = (String) payload.get("packageCode");
         Map<String, Object> inputs = (Map<String, Object>) payload.get("inputs");

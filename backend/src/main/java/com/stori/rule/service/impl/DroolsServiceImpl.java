@@ -52,6 +52,9 @@ public class DroolsServiceImpl implements DroolsService {
     // Cache Package Metadata by cache key
     private final Map<String, PackageMetadata> metadataCache = new ConcurrentHashMap<>();
 
+    // Cache RulePackage by packageCode
+    private final Map<String, RulePackage> packageCache = new ConcurrentHashMap<>();
+
     @Data
     private static class PackageMetadata {
         private RulePackage rulePackage;
@@ -62,8 +65,11 @@ public class DroolsServiceImpl implements DroolsService {
     @Override
     public Map<String, Object> execute(String packageCode, Map<String, Object> inputs) {
         // Production Execution: Use Active Version
-        RulePackage pkg = rulePackageMapper.selectByCode(packageCode);
-        if (pkg == null) throw new RuntimeException("Package not found: " + packageCode);
+        RulePackage pkg = packageCache.computeIfAbsent(packageCode, k -> {
+            RulePackage p = rulePackageMapper.selectByCode(k);
+            if (p == null) throw new RuntimeException("Package not found: " + k);
+            return p;
+        });
         
         if (pkg.getActiveVersionId() == null) {
             throw new RuntimeException("No active version for package: " + packageCode);
@@ -147,6 +153,9 @@ public class DroolsServiceImpl implements DroolsService {
         String draftKey = packageCode + ":DRAFT";
         kieBaseCache.remove(draftKey);
         metadataCache.remove(draftKey);
+        
+        // Clear package cache to ensure latest active version is picked up
+        packageCache.remove(packageCode);
         
         // Note: Production versions are immutable so we don't strictly need to clear them unless we want to free memory,
         // but explicit reload usually targets Draft development cycle.
