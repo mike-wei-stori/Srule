@@ -57,6 +57,11 @@ export default {
     'common.refresh': '刷新',
     'common.export': '导出',
     'common.import': '导入',
+    'common.owner': '负责人',
+    'common.createdBy': '创建人',
+    'common.lastModifiedBy': '最后修改人',
+    'common.createdAt': '创建时间',
+    'common.updatedAt': '修改时间',
 
     // User Related
     'user.username': '用户名',

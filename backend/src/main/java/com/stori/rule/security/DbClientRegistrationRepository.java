@@ -26,6 +26,7 @@ public class DbClientRegistrationRepository implements ClientRegistrationReposit
     private ClientRegistration getGoogleClientRegistration() {
         String clientId = sysConfigService.getValue("google.client.id");
         String clientSecret = sysConfigService.getValue("google.client.secret");
+        String redirectUriTemplate = sysConfigService.getValue("google.redirect.uri.template", "{baseUrl}/login/oauth2/code/{registrationId}");
 
         if (clientId == null || clientSecret == null) {
             return null;
@@ -36,7 +37,7 @@ public class DbClientRegistrationRepository implements ClientRegistrationReposit
                 .clientSecret(clientSecret)
                 .clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_BASIC)
                 .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
-                .redirectUri("{baseUrl}/login/oauth2/code/{registrationId}")
+                .redirectUri(redirectUriTemplate)
                 .scope("openid", "profile", "email")
                 .authorizationUri("https://accounts.google.com/o/oauth2/v2/auth")
                 .tokenUri("https://www.googleapis.com/oauth2/v4/token")

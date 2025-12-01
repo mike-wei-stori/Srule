@@ -84,6 +84,28 @@ const RulePackagePage: React.FC = () => {
             hideInSearch: true,
         },
         {
+            title: intl.formatMessage({ id: 'common.createdBy' }),
+            dataIndex: 'createdBy',
+            hideInSearch: true,
+        },
+        {
+            title: intl.formatMessage({ id: 'common.createdAt' }),
+            dataIndex: 'createdAt',
+            valueType: 'dateTime',
+            hideInSearch: true,
+        },
+        {
+            title: intl.formatMessage({ id: 'common.lastModifiedBy' }),
+            dataIndex: 'lastModifiedBy',
+            hideInSearch: true,
+        },
+        {
+            title: intl.formatMessage({ id: 'common.updatedAt' }),
+            dataIndex: 'updatedAt',
+            valueType: 'dateTime',
+            hideInSearch: true,
+        },
+        {
             title: intl.formatMessage({ id: 'common.actions' }),
             valueType: 'option',
             width: 250,

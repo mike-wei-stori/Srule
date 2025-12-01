@@ -37,6 +37,10 @@ public class FeatureRecord {
     private String tenantId;
 
     @TableField(fill = FieldFill.INSERT)
+    @Column(value = "created_by", length = 50, comment = "创建人")
+    private String createdBy;
+
+    @TableField(fill = FieldFill.INSERT)
     @Column(value = "created_at", comment = "创建时间")
     private LocalDateTime createdAt;
 }

@@ -94,6 +94,12 @@ const RoleManagement: React.FC = () => {
             search: false,
         },
         {
+            title: intl.formatMessage({ id: 'common.updatedAt' }),
+            dataIndex: 'updateTime',
+            valueType: 'dateTime',
+            search: false,
+        },
+        {
             title: intl.formatMessage({ id: 'common.actions' }),
             valueType: 'option',
             render: (_, record) => [

@@ -31,6 +31,14 @@ public class SysConfig {
     private String tenantId;
 
     @TableField(fill = FieldFill.INSERT)
+    @Column(value = "created_by", length = 50, comment = "Created By")
+    private String createdBy;
+
+    @TableField(fill = FieldFill.INSERT_UPDATE)
+    @Column(value = "last_modified_by", length = 50, comment = "Last Modified By")
+    private String lastModifiedBy;
+
+    @TableField(fill = FieldFill.INSERT)
     @Column(value = "created_at", comment = "Created At")
     private LocalDateTime createdAt;
 

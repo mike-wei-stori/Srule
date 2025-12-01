@@ -44,6 +44,21 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
         String token = JwtUtils.createToken(user.getId(), user.getUsername());
 
         // Redirect to frontend with token
-        response.sendRedirect("http://localhost:8000/oauth/callback?token=" + token);
+        // Dynamically construct URL based on request (which respects X-Forwarded-* headers)
+        String scheme = request.getScheme();
+        String serverName = request.getServerName();
+        int serverPort = request.getServerPort();
+        String contextPath = request.getContextPath();
+
+        StringBuilder url = new StringBuilder();
+        url.append(scheme).append("://").append(serverName);
+
+        if ((scheme.equals("http") && serverPort != 80) || (scheme.equals("https") && serverPort != 443)) {
+            url.append(":").append(serverPort);
+        }
+
+        url.append(contextPath).append("/oauth/callback?token=").append(token);
+        
+        response.sendRedirect(url.toString());
     }
 }

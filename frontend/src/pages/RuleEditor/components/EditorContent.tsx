@@ -16,7 +16,7 @@ import ReactFlow, {
 import 'reactflow/dist/style.css';
 import { message } from 'antd';
 import { useParams, useIntl } from '@umijs/max';
-import { getPackages, loadPackageGraph, savePackageGraph } from '@/services/RulePackageController';
+import { getPackages, loadPackageGraph, savePackageGraph, updatePackage } from '@/services/RulePackageController';
 import StartNode from './nodes/StartNode';
 import DecisionNode from './nodes/DecisionNode';
 import ActionNode from './nodes/ActionNode';
@@ -30,6 +30,7 @@ import CanvasContextMenu from './CanvasContextMenu';
 import EditorToolbar from './EditorToolbar';
 import PublishModal from './PublishModal';
 import VersionListDrawer from './VersionListDrawer';
+import RulePackageEditModal from './RulePackageEditModal';
 
 import { getLayoutedElements } from '../utils/layout';
 import { useUndoRedo } from '../hooks/useUndoRedo';
@@ -69,6 +70,8 @@ const EditorContent = () => {
     const [menuPosition, setMenuPosition] = useState({ x: 0, y: 0 });
     const [publishVisible, setPublishVisible] = useState(false);
     const [versionsVisible, setVersionsVisible] = useState(false);
+    const [editModalVisible, setEditModalVisible] = useState(false);
+    const [packageData, setPackageData] = useState<any>(null);
     const [activeVersionId, setActiveVersionId] = useState<number | undefined>(undefined);
     const reactFlowInstance = useReactFlow();
 
@@ -126,6 +129,7 @@ const EditorContent = () => {
                 if (res.data && res.data.length > 0) {
                     setPackageId(res.data[0].id);
                     setActiveVersionId(res.data[0].activeVersionId);
+                    setPackageData(res.data[0]);
                 }
             } catch (e) {
                 message.error(intl.formatMessage({ id: 'pages.editor.loadFailed' }));
@@ -377,6 +381,26 @@ const EditorContent = () => {
         });
     };
 
+    const onEdit = () => {
+        setEditModalVisible(true);
+    };
+
+    const onEditOk = async (values: any) => {
+        if (!packageId) return;
+        try {
+            await updatePackage(packageId, values);
+            message.success('Package updated successfully');
+            setEditModalVisible(false);
+            // Refresh data
+            const res = await getPackages({ code: packageCode });
+            if (res.data && res.data.length > 0) {
+                setPackageData(res.data[0]);
+            }
+        } catch (e) {
+            message.error('Failed to update package');
+        }
+    };
+
     const onUndo = useCallback(() => {
         // pass nothing to undo(), it uses internal history stack? 
         // No, original useUndoRedo takes (nodes, edges) to push current state before undoing?
@@ -586,6 +610,7 @@ const EditorContent = () => {
                         onSave={onSave}
                         onPublish={onPublish}
                         onVersions={onVersions}
+                        onEdit={onEdit}
                         toggleFullscreen={toggleFullscreen}
                         isFullscreen={isFullscreen}
                         canUndo={canUndo}
@@ -610,6 +635,12 @@ const EditorContent = () => {
                         packageId={packageId}
                         activeVersionId={activeVersionId}
                         onVersionChange={onVersionChange}
+                    />
+                    <RulePackageEditModal
+                        visible={editModalVisible}
+                        onCancel={() => setEditModalVisible(false)}
+                        onOk={onEditOk}
+                        initialValues={packageData}
                     />
                 </>
             )}

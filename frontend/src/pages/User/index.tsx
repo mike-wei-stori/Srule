@@ -35,6 +35,18 @@ const UserList: React.FC = () => {
             },
         },
         {
+            title: intl.formatMessage({ id: 'common.createdAt' }),
+            dataIndex: 'createTime',
+            valueType: 'dateTime',
+            hideInSearch: true,
+        },
+        {
+            title: intl.formatMessage({ id: 'common.updatedAt' }),
+            dataIndex: 'updateTime',
+            valueType: 'dateTime',
+            hideInSearch: true,
+        },
+        {
             title: intl.formatMessage({ id: 'common.actions' }),
             valueType: 'option',
             render: (text, record, _, action) => [

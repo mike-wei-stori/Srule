@@ -53,6 +53,11 @@ export default {
     'common.refresh': 'Refresh',
     'common.export': 'Export',
     'common.import': 'Import',
+    'common.owner': 'Owners',
+    'common.createdBy': 'Created By',
+    'common.lastModifiedBy': 'Last Modified By',
+    'common.createdAt': 'Created At',
+    'common.updatedAt': 'Updated At',
 
     // User Related
     'user.username': 'Username',

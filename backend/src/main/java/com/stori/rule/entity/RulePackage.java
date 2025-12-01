@@ -38,6 +38,17 @@ public class RulePackage {
 
     @Column(value = "tenant_id", length = 50, defaultValue = "DEFAULT", comment = "租户ID")
     private String tenantId;
+
+    @Column(value = "owner", length = 255, comment = "负责人")
+    private String owner;
+
+    @TableField(fill = FieldFill.INSERT)
+    @Column(value = "created_by", length = 50, comment = "创建人")
+    private String createdBy;
+
+    @TableField(fill = FieldFill.INSERT_UPDATE)
+    @Column(value = "last_modified_by", length = 50, comment = "最后修改人")
+    private String lastModifiedBy;
     
     @TableField(fill = FieldFill.INSERT)
     @Column(value = "created_at", comment = "创建时间")
@@ -70,6 +81,15 @@ public class RulePackage {
 
     public String getTenantId() { return tenantId; }
     public void setTenantId(String tenantId) { this.tenantId = tenantId; }
+
+    public String getOwner() { return owner; }
+    public void setOwner(String owner) { this.owner = owner; }
+
+    public String getCreatedBy() { return createdBy; }
+    public void setCreatedBy(String createdBy) { this.createdBy = createdBy; }
+
+    public String getLastModifiedBy() { return lastModifiedBy; }
+    public void setLastModifiedBy(String lastModifiedBy) { this.lastModifiedBy = lastModifiedBy; }
 
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }

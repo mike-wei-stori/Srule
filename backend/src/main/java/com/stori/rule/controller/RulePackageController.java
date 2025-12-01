@@ -46,6 +46,13 @@ public class RulePackageController {
     @PostMapping
     @PreAuthorize("hasAuthority('PACKAGE_CREATE')")
     public Result<Boolean> create(@RequestBody RulePackage rulePackage) {
+        if (rulePackage.getOwner() == null) {
+            org.springframework.security.core.Authentication auth = 
+                org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+            if (auth != null && auth.isAuthenticated()) {
+                rulePackage.setOwner(auth.getName());
+            }
+        }
         return Result.success(rulePackageService.save(rulePackage));
     }
 

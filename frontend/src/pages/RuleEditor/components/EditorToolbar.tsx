@@ -14,7 +14,8 @@ import {
     UndoOutlined,
     RedoOutlined,
     CloudUploadOutlined,
-    HistoryOutlined
+    HistoryOutlined,
+    EditOutlined
 } from '@ant-design/icons';
 import PermissionGate from '@/components/PermissionGate';
 
@@ -30,6 +31,7 @@ interface EditorToolbarProps {
     onSave: () => void;
     onPublish: () => void;
     onVersions: () => void;
+    onEdit: () => void;
     toggleFullscreen: () => void;
     isFullscreen: boolean;
     canUndo: boolean;
@@ -63,6 +65,7 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({
     onSave,
     onPublish,
     onVersions,
+    onEdit,
     toggleFullscreen,
     isFullscreen,
     canUndo,
@@ -130,6 +133,11 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({
                     <PermissionGate permission="PACKAGE_READ">
                         <Tooltip title="Versions">
                             <ToolbarButton icon={<HistoryOutlined />} onClick={onVersions} />
+                        </Tooltip>
+                    </PermissionGate>
+                    <PermissionGate permission="PACKAGE_UPDATE">
+                        <Tooltip title="Edit Info">
+                            <ToolbarButton icon={<EditOutlined />} onClick={onEdit} />
                         </Tooltip>
                     </PermissionGate>
                 </Space.Compact>
