@@ -110,21 +110,28 @@ const RulePackageNode = (props: NodeProps) => {
                 <Text strong style={{ fontSize: 12 }}>
                     {formatMessage({ id: 'pages.rulePackageNode.title', defaultMessage: '规则包节点' })}
                 </Text>
-                {data.packageCode && (
+            </Space>
+
+            {/* Edit Button (Absolute Positioned) */}
+            {data.packageCode && (
+                <div style={{ position: 'absolute', top: -32, right: 10, zIndex: 10 }}>
                     <Tooltip title={formatMessage({ id: 'pages.rulePackageNode.editPackage', defaultMessage: 'Edit Rule Package' })}>
-                        <EditOutlined
-                            style={{ cursor: 'pointer', color: '#1890ff', marginLeft: 4 }}
+                        <Button
+                            type="text"
+                            size="small"
+                            icon={<EditOutlined />}
+                            style={{ color: '#1890ff' }}
                             onClick={(e) => {
                                 e.stopPropagation();
                                 const pkg = packages.find(p => p.code === data.packageCode);
                                 if (pkg) {
-                                    history.push(`/rule/editor/${pkg.id}`);
+                                    window.open(`/editor/${pkg.code}`, '_blank');
                                 }
                             }}
                         />
                     </Tooltip>
-                )}
-            </Space>
+                </div>
+            )}
 
             {/* Body Content */}
             <div style={{ marginTop: 8 }} className="nodrag">
