@@ -74,6 +74,7 @@ export const useGraphOperations = ({
             case 'SCRIPT': prefix = intl.formatMessage({ id: 'pages.editor.node.defaultName.script' }); break;
             case 'LOOP': prefix = intl.formatMessage({ id: 'pages.editor.node.defaultName.loop' }); break;
             case 'CONDITION': prefix = intl.formatMessage({ id: 'pages.editor.node.defaultName.condition' }); break;
+            case 'RULE_PACKAGE': prefix = intl.formatMessage({ id: 'pages.editor.node.defaultName.rulePackage', defaultMessage: 'Rule Package' }); break;
             default: prefix = type.charAt(0) + type.slice(1).toLowerCase();
         }
 
@@ -375,6 +376,14 @@ export const useGraphOperations = ({
                     data: { label, type: 'LOOP', collectionVariable: '', packageId, onChange: onNodeDataChange, validateNodeName },
                     position: { x: parentNode.position.x + 250, y: parentNode.position.y },
                 };
+            } else if (action === 'addRulePackage') {
+                const label = generateNodeName('RULE_PACKAGE');
+                newNode = {
+                    id: newId,
+                    type: 'RULE_PACKAGE',
+                    data: { label, type: 'RULE_PACKAGE', packageCode: '', inputMapping: [], outputMapping: [], packageId, onChange: onNodeDataChange, validateNodeName },
+                    position: { x: parentNode.position.x + 250, y: parentNode.position.y },
+                };
             } else if (action === 'delete') {
                 if (parentNode.type === 'START') {
                     message.warning(intl.formatMessage({ id: 'pages.editor.cannotDeleteStart', defaultMessage: 'Cannot delete Start node' }));
@@ -501,6 +510,7 @@ export const useGraphOperations = ({
                 ...(type === 'ACTION' ? { targetParameter: '', assignmentValue: '' } : {}),
                 ...(type === 'SWITCH' ? { parameter: '', cases: [] } : {}),
                 ...(type === 'DECISION_TABLE' ? { branches: [] } : {}),
+                ...(type === 'RULE_PACKAGE' ? { packageCode: '', inputMapping: [], outputMapping: [] } : {}),
             },
         };
 

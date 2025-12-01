@@ -5,6 +5,7 @@ import com.stori.rule.service.converter.AbstractNodeConverter;
 import com.stori.rule.service.converter.ConverterContext;
 import org.springframework.stereotype.Component;
 
+import java.util.List;
 import java.util.Map;
 
 @Component
@@ -18,7 +19,6 @@ public class ScriptNodeConverter extends AbstractNodeConverter {
     public String convert(NodeDto node, ConverterContext context) {
         StringBuilder drl = new StringBuilder();
         String ruleName = getRuleName(node, context);
-        String nextNodeId = getNextNodeId(node, context);
         
         drl.append("rule \"").append(ruleName).append("\"\n");
         drl.append("    agenda-group \"").append(getAgendaGroup(node.getId())).append("\"\n");
@@ -37,9 +37,12 @@ public class ScriptNodeConverter extends AbstractNodeConverter {
             drl.append("    System.out.println(\"Executing Script Node: ").append(node.getId()).append("\");\n");
         }
 
-        if (nextNodeId != null) {
-            drl.append("    kcontext.getKnowledgeRuntime().getAgenda().getAgendaGroup(\"")
-               .append(getAgendaGroup(nextNodeId)).append("\").setFocus();\n");
+        List<String> nextNodeIds = getNextNodeIds(node, context);
+        if (nextNodeIds != null && !nextNodeIds.isEmpty()) {
+            for (String nextNodeId : nextNodeIds) {
+                drl.append("    kcontext.getKnowledgeRuntime().getAgenda().getAgendaGroup(\"")
+                   .append(getAgendaGroup(nextNodeId)).append("\").setFocus();\n");
+            }
         }
         drl.append("end\n\n");
         return drl.toString();

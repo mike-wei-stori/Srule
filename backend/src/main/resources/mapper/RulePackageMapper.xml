@@ -6,6 +6,22 @@
         SELECT * FROM rule_package WHERE code = #{code}
     </select>
 
+    <select id="selectList" resultType="com.stori.rule.entity.RulePackage">
+        SELECT * FROM rule_package
+        <where>
+            <if test="param.code != null and param.code != ''">
+                AND code = #{param.code}
+            </if>
+            <if test="param.name != null and param.name != ''">
+                AND name LIKE CONCAT('%', #{param.name}, '%')
+            </if>
+            <if test="param.status != null">
+                AND status = #{param.status}
+            </if>
+        </where>
+        ORDER BY updated_at DESC
+    </select>
+
 </mapper>
 
 

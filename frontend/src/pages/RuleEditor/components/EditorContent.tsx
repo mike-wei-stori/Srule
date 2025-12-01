@@ -24,6 +24,7 @@ import ScriptNode from './nodes/ScriptNode';
 import LoopNode from './nodes/LoopNode';
 import SwitchNode from './nodes/SwitchNode';
 import DecisionTableNode from './nodes/DecisionTableNode';
+import RulePackageNode from './nodes/RulePackageNode';
 
 import NodePalette from './NodePalette';
 import CanvasContextMenu from './CanvasContextMenu';
@@ -48,6 +49,7 @@ const nodeTypes = {
     LOOP: LoopNode,
     SWITCH: SwitchNode,
     DECISION_TABLE: DecisionTableNode,
+    RULE_PACKAGE: RulePackageNode,
 };
 
 const initialNodes: Node[] = [
@@ -499,6 +501,7 @@ const EditorContent = () => {
             case 'ACTION': return '#52c41a';
             case 'SWITCH': return '#13c2c2';
             case 'DECISION_TABLE': return '#722ed1';
+            case 'RULE_PACKAGE': return '#eb2f96';
             default: return '#d9d9d9';
         }
     };

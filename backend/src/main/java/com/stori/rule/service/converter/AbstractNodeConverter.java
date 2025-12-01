@@ -27,6 +27,11 @@ public abstract class AbstractNodeConverter implements NodeConverter {
         if (edges.isEmpty()) return null;
         return edges.get(0).getTarget();
     }
+
+    protected List<String> getNextNodeIds(NodeDto node, ConverterContext context) {
+        List<EdgeDto> edges = context.getOutgoingEdges(node.getId());
+        return edges.stream().map(EdgeDto::getTarget).collect(java.util.stream.Collectors.toList());
+    }
     
     protected String formatValue(String parameterCode, Object value, Map<String, RuleVariable> variableMap) {
         if (value == null) return "null";

@@ -47,4 +47,8 @@ public class RulePackageServiceImpl extends ServiceImpl<RulePackageMapper, RuleP
         // droolsService.reloadRules(pkg.getCode());
         return droolsService.execute(pkg.getCode(), inputs);
     }
+    @Override
+    public java.util.List<RulePackage> list(RulePackage rulePackage) {
+        return baseMapper.selectList(rulePackage);
+    }
 }

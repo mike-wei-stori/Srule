@@ -8,4 +8,5 @@ import org.apache.ibatis.annotations.Param;
 @Mapper
 public interface RulePackageMapper extends BaseMapper<RulePackage> {
     RulePackage selectByCode(@Param("code") String code);
+    java.util.List<RulePackage> selectList(@Param("param") RulePackage rulePackage);
 }

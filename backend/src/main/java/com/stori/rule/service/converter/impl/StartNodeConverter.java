@@ -28,7 +28,6 @@ public class StartNodeConverter extends AbstractNodeConverter {
     public String convert(NodeDto node, ConverterContext context) {
         StringBuilder drl = new StringBuilder();
         String ruleName = getRuleName(node, context);
-        String nextNodeId = getNextNodeId(node, context);
         
         drl.append("rule \"").append(ruleName).append("\"\n");
         drl.append("    agenda-group \"").append(getAgendaGroup(node.getId())).append("\"\n");
@@ -52,9 +51,12 @@ public class StartNodeConverter extends AbstractNodeConverter {
             }
         }
 
-        if (nextNodeId != null) {
-            drl.append("    kcontext.getKnowledgeRuntime().getAgenda().getAgendaGroup(\"")
-               .append(getAgendaGroup(nextNodeId)).append("\").setFocus();\n");
+        List<String> nextNodeIds = getNextNodeIds(node, context);
+        if (nextNodeIds != null && !nextNodeIds.isEmpty()) {
+            for (String nextNodeId : nextNodeIds) {
+                drl.append("    kcontext.getKnowledgeRuntime().getAgenda().getAgendaGroup(\"")
+                   .append(getAgendaGroup(nextNodeId)).append("\").setFocus();\n");
+            }
         }
         drl.append("end\n\n");
         return drl.toString();

@@ -9,4 +9,5 @@ public interface RulePackageService extends IService<RulePackage> {
     void publish(Long id);
     void offline(Long id);
     Map<String, Object> test(Long id, Map<String, Object> inputs);
+    java.util.List<RulePackage> list(RulePackage rulePackage);
 }

@@ -9,7 +9,8 @@ import {
     CodeOutlined,
     SyncOutlined,
     PartitionOutlined,
-    TableOutlined
+    TableOutlined,
+    DeploymentUnitOutlined
 } from '@ant-design/icons';
 
 interface CanvasContextMenuProps {
@@ -82,6 +83,11 @@ const CanvasContextMenu: React.FC<CanvasContextMenuProps> = ({
             key: 'add_DECISION_TABLE',
             label: formatMessage({ id: 'pages.editor.contextMenu.addDecisionTable', defaultMessage: 'Add Decision Table' }),
             icon: <TableOutlined style={{ color: '#722ed1' }} />
+        },
+        {
+            key: 'add_RULE_PACKAGE',
+            label: formatMessage({ id: 'pages.editor.contextMenu.addRulePackage', defaultMessage: 'Add Rule Package Node' }),
+            icon: <DeploymentUnitOutlined style={{ color: '#eb2f96' }} />
         }
     ];
 

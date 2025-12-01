@@ -8,6 +8,7 @@ import {
   SyncOutlined,
   TableOutlined,
   ThunderboltOutlined,
+  DeploymentUnitOutlined,
 } from '@ant-design/icons';
 import { useIntl } from '@umijs/max';
 import { Button, Card, Space, Tooltip, Typography } from 'antd';
@@ -82,6 +83,19 @@ const NodePalette: React.FC<NodePaletteProps> = ({ onDragStart }) => {
       color: '#722ed1',
       description: intl.formatMessage({
         id: 'pages.editor.node.script.desc',
+      }),
+    },
+    {
+      type: 'RULE_PACKAGE',
+      label: intl.formatMessage({
+        id: 'pages.editor.node.rulePackage',
+        defaultMessage: 'Rule Package',
+      }),
+      icon: <DeploymentUnitOutlined />,
+      color: '#eb2f96',
+      description: intl.formatMessage({
+        id: 'pages.editor.node.rulePackage.desc',
+        defaultMessage: 'Execute another rule package',
       }),
     },
   ];

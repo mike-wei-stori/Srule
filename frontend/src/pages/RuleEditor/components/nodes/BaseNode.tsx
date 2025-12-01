@@ -41,7 +41,8 @@ export const BaseNode = (props: BaseNodeProps) => {
             { type: 'SWITCH', label: intl.formatMessage({ id: 'pages.editor.node.switch', defaultMessage: 'Switch Node' }), action: 'addSwitch' },
             { type: 'DECISION_TABLE', label: intl.formatMessage({ id: 'pages.editor.node.decisionTable', defaultMessage: 'Decision Table Node' }), action: 'addDecisionTable' },
             { type: 'SCRIPT', label: intl.formatMessage({ id: 'pages.editor.node.script', defaultMessage: 'Script Node' }), action: 'addScript' },
-            { type: 'LOOP', label: intl.formatMessage({ id: 'pages.editor.node.loop', defaultMessage: 'Loop Node' }), action: 'addLoop' }
+            { type: 'LOOP', label: intl.formatMessage({ id: 'pages.editor.node.loop', defaultMessage: 'Loop Node' }), action: 'addLoop' },
+            { type: 'RULE_PACKAGE', label: intl.formatMessage({ id: 'pages.editor.node.rulePackage', defaultMessage: 'Rule Package Node' }), action: 'addRulePackage' }
         ];
 
         nodeTypes.forEach(nt => {

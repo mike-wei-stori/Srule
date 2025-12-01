@@ -12,6 +12,7 @@ const getNodeWidth = (node: Node) => {
         case 'START': return 450;
         case 'SWITCH': return 350;
         case 'DECISION_TABLE': return 500; // Decision tables are wider
+        case 'RULE_PACKAGE': return 350;
         default: return 300;
     }
 };
@@ -54,6 +55,13 @@ const getNodeHeight = (node: Node) => {
             return 120;
         case 'LOOP':
             return 100;
+        case 'RULE_PACKAGE':
+            // Header(40) + PackageSelect(40) + Mappings (Variable)
+            // Estimate based on mapping count
+            const inputCount = (node.data.inputMapping || []).length;
+            const outputCount = (node.data.outputMapping || []).length;
+            // Base 100 + 35px per mapping
+            return 100 + ((inputCount + outputCount) * 35) + 40;
         default:
             return 80;
     }
@@ -72,7 +80,7 @@ export const getLayoutedElements = (nodes: Node[], edges: Edge[], direction = 'L
         rankdir: direction,
         align: 'UL', // Align nodes to the top-left to respect edge order
         ranksep: isHorizontal ? 250 : 150, // Compact Horizontal spacing
-        nodesep: isHorizontal ? 100 : 100   // Compact Vertical spacing
+        nodesep: isHorizontal ? 120 : 120   // Increased Vertical spacing to avoid overlap
     });
 
     // Helper to get rank of edge type

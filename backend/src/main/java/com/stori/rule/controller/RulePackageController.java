@@ -33,8 +33,8 @@ public class RulePackageController {
 
     @GetMapping
     @PreAuthorize("hasAuthority('PACKAGE_READ')")
-    public Result<List<RulePackage>> list() {
-        return Result.success(rulePackageService.list());
+    public Result<List<RulePackage>> list(RulePackage rulePackage) {
+        return Result.success(rulePackageService.list(rulePackage));
     }
 
     @GetMapping("/{id}")
