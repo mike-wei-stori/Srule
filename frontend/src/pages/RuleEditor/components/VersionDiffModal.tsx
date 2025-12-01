@@ -13,6 +13,7 @@ import ScriptNode from './nodes/ScriptNode';
 import LoopNode from './nodes/LoopNode';
 import SwitchNode from './nodes/SwitchNode';
 import DecisionTableNode from './nodes/DecisionTableNode';
+import RulePackageNode from './nodes/RulePackageNode';
 import { getLayoutedElements } from '../utils/layout';
 
 const { Text } = Typography;
@@ -32,6 +33,7 @@ const nodeTypes = {
     LOOP: LoopNode,
     SWITCH: SwitchNode,
     DECISION_TABLE: DecisionTableNode,
+    RULE_PACKAGE: RulePackageNode,
 };
 
 const VersionDiffModal: React.FC<VersionDiffModalProps> = ({ visible, onClose, baseVersion, targetVersion }) => {

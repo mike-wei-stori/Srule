@@ -1,8 +1,8 @@
 import React, { memo, useEffect, useState } from 'react';
 import { NodeProps } from 'reactflow';
-import { DeploymentUnitOutlined, PlusOutlined, MinusCircleOutlined, RightOutlined, SwapOutlined } from '@ant-design/icons';
-import { Typography, Space, Select, Button, Divider } from 'antd';
-import { useIntl } from 'umi';
+import { DeploymentUnitOutlined, PlusOutlined, MinusCircleOutlined, RightOutlined, SwapOutlined, EditOutlined } from '@ant-design/icons';
+import { Typography, Space, Select, Button, Divider, Tooltip } from 'antd';
+import { useIntl, history } from 'umi';
 import { BaseNode } from './BaseNode';
 import { CompositionInput } from '../CompositionInput';
 import { getPackages } from '@/services/RulePackageController';
@@ -110,6 +110,20 @@ const RulePackageNode = (props: NodeProps) => {
                 <Text strong style={{ fontSize: 12 }}>
                     {formatMessage({ id: 'pages.rulePackageNode.title', defaultMessage: '规则包节点' })}
                 </Text>
+                {data.packageCode && (
+                    <Tooltip title={formatMessage({ id: 'pages.rulePackageNode.editPackage', defaultMessage: 'Edit Rule Package' })}>
+                        <EditOutlined
+                            style={{ cursor: 'pointer', color: '#1890ff', marginLeft: 4 }}
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                const pkg = packages.find(p => p.code === data.packageCode);
+                                if (pkg) {
+                                    history.push(`/rule/editor/${pkg.id}`);
+                                }
+                            }}
+                        />
+                    </Tooltip>
+                )}
             </Space>
 
             {/* Body Content */}
