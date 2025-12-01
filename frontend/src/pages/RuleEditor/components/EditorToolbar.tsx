@@ -142,7 +142,7 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({
                     </PermissionGate>
                 </Space.Compact>
             </Space>
-        </Panel>
+        </Panel >
     );
 };
 

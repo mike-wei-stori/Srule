@@ -203,6 +203,16 @@ export default {
     'pages.editor.node.decisionTable.addBranch': 'Add Branch',
     'pages.editor.node.decisionTable.condition': 'Condition',
     'pages.editor.node.decisionTable.expression': 'Expression',
+    'pages.editor.savedLocally': 'Saved locally',
+    'pages.editor.draftFound': 'Local draft found',
+    'pages.editor.draftFoundDesc': 'An unsaved local draft was found. Do you want to restore it?',
+    'pages.editor.draftTime': 'Draft Time',
+    'pages.editor.serverTime': 'Server Time',
+    'pages.editor.restoreDraftConfirm': 'You have unsaved local changes. Do you want to restore them?',
+    'pages.editor.restore': 'Restore',
+    'pages.editor.discard': 'Discard',
+    'pages.editor.restoreSuccess': 'Restored from local draft',
+    'pages.editor.draftDiscarded': 'Local draft discarded',
 
     // Profile
     'pages.profile.userInfo': 'User Info',

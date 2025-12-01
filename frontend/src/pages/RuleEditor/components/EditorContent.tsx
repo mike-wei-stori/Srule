@@ -1,6 +1,7 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState, useRef } from 'react';
 import ReactFlow, {
     Node,
+    Edge,
     Controls,
     Background,
     MiniMap,
@@ -14,7 +15,7 @@ import ReactFlow, {
     ConnectionLineType
 } from 'reactflow';
 import 'reactflow/dist/style.css';
-import { message } from 'antd';
+import { message, Modal } from 'antd';
 import { useParams, useIntl } from '@umijs/max';
 import { getPackages, loadPackageGraph, savePackageGraph, updatePackage } from '@/services/RulePackageController';
 import StartNode from './nodes/StartNode';
@@ -75,7 +76,10 @@ const EditorContent = () => {
     const [editModalVisible, setEditModalVisible] = useState(false);
     const [packageData, setPackageData] = useState<any>(null);
     const [activeVersionId, setActiveVersionId] = useState<number | undefined>(undefined);
+    const [saveStatus, setSaveStatus] = useState<string>('');
     const reactFlowInstance = useReactFlow();
+    const isDirty = useRef(false);
+    const draftCheckResolved = useRef(false);
 
     const { takeSnapshot, undo, redo, canUndo, canRedo } = useUndoRedo();
 
@@ -101,6 +105,16 @@ const EditorContent = () => {
         window.requestAnimationFrame(() => reactFlowInstance.fitView({ padding: 0.2, maxZoom: 1 }));
     }, [reactFlowInstance, setNodes, setEdges, takeSnapshot]); // Removed nodes, edges from deps
 
+    const setNodesDirty = useCallback((value: React.SetStateAction<Node[]>) => {
+        isDirty.current = true;
+        setNodes(value);
+    }, [setNodes]);
+
+    const setEdgesDirty = useCallback((value: React.SetStateAction<Edge[]>) => {
+        isDirty.current = true;
+        setEdges(value);
+    }, [setEdges]);
+
     const {
         onCopyNode,
         onPasteNode,
@@ -116,8 +130,8 @@ const EditorContent = () => {
     } = useGraphOperations({
         reactFlowInstance,
         packageId,
-        setNodes,
-        setEdges,
+        setNodes: setNodesDirty,
+        setEdges: setEdgesDirty,
         intl,
         takeSnapshot,
         onLayout
@@ -139,6 +153,39 @@ const EditorContent = () => {
         };
         if (packageCode) fetchPackage();
     }, [packageCode]);
+
+    // Reset draft check lock when packageId changes
+    useEffect(() => {
+        draftCheckResolved.current = false;
+    }, [packageId]);
+
+    // Auto-save to local storage
+    useEffect(() => {
+        if (!packageId || nodes.length === 0 || !isDirty.current || !draftCheckResolved.current) {
+            console.log('Auto-save skipped:', {
+                packageId,
+                nodesLength: nodes.length,
+                isDirty: isDirty.current,
+                draftCheckResolved: draftCheckResolved.current
+            });
+            return;
+        }
+
+        const saveToLocal = setTimeout(() => {
+            const graphData = getGraphData();
+            const storageKey = `srule_draft_${packageId}`;
+            const draftData = {
+                graphData,
+                timestamp: Date.now()
+            };
+            console.log('Auto-saving to local storage:', storageKey, draftData);
+            localStorage.setItem(storageKey, JSON.stringify(draftData));
+            setSaveStatus(intl.formatMessage({ id: 'pages.editor.savedLocally', defaultMessage: 'Saved locally' }));
+            setTimeout(() => setSaveStatus(''), 2000);
+        }, 1000); // Debounce 1s
+
+        return () => clearTimeout(saveToLocal);
+    }, [nodes, edges, packageId]);
 
     // Load graph when packageId is set
     useEffect(() => {
@@ -187,6 +234,8 @@ const EditorContent = () => {
                     }, 500);
 
                     message.success(intl.formatMessage({ id: 'pages.editor.loadSuccess' }));
+                    // Reset dirty flag after loading
+                    isDirty.current = false;
                 }
             } catch (e) {
                 console.error('Failed to load graph:', e);
@@ -195,6 +244,98 @@ const EditorContent = () => {
 
         loadGraph();
     }, [packageId]); // Minimal dependencies for loading! 
+
+    // Check for local draft after loading
+    useEffect(() => {
+        if (!packageId || !packageData) return;
+
+        const checkDraft = () => {
+            const storageKey = `srule_draft_${packageId}`;
+            const savedDraft = localStorage.getItem(storageKey);
+            console.log('Checking draft:', storageKey, savedDraft ? 'Found' : 'Not Found');
+            console.log('Current packageData:', packageData);
+
+            if (savedDraft) {
+                try {
+                    const draft = JSON.parse(savedDraft);
+                    const draftTime = draft.timestamp;
+
+                    let serverTimeStr = 'Unknown';
+                    try {
+                        // API returns updatedAt, but typings might say updateTime. Handle both.
+                        const timeStr = packageData.updatedAt || packageData.updateTime;
+                        const date = new Date(timeStr);
+                        if (!isNaN(date.getTime())) {
+                            serverTimeStr = date.toLocaleString();
+                        } else {
+                            serverTimeStr = String(timeStr || 'Unknown');
+                        }
+                    } catch (e) {
+                        serverTimeStr = String(packageData.updatedAt || packageData.updateTime || 'Unknown');
+                    }
+
+                    // Always prompt if draft exists, letting user decide.
+                    // This avoids timezone/clock skew issues.
+                    Modal.confirm({
+                        title: intl.formatMessage({ id: 'pages.editor.draftFound', defaultMessage: 'Local draft found' }),
+                        content: (
+                            <div>
+                                <p>{intl.formatMessage({ id: 'pages.editor.draftFoundDesc', defaultMessage: 'A local draft was found. Do you want to restore it?' })}</p>
+                                <p style={{ fontSize: 12, color: '#888' }}>
+                                    {intl.formatMessage({ id: 'pages.editor.draftTime', defaultMessage: 'Draft Time' })}: {new Date(draftTime).toLocaleString()}
+                                    <br />
+                                    {intl.formatMessage({ id: 'pages.editor.serverTime', defaultMessage: 'Server Time' })}: {serverTimeStr}
+                                </p>
+                            </div>
+                        ),
+                        okText: intl.formatMessage({ id: 'pages.editor.restore', defaultMessage: 'Restore' }),
+                        cancelText: intl.formatMessage({ id: 'pages.editor.discard', defaultMessage: 'Discard' }),
+                        onOk: () => {
+                            const { nodes: draftNodes, edges: draftEdges } = draft.graphData;
+                            const nodesWithHandlers = draftNodes.map((node: any) => ({
+                                ...node,
+                                data: {
+                                    ...node.data,
+                                    packageId,
+                                    onChange: onNodeDataChange,
+                                    onMenuClick,
+                                    validateNodeName
+                                }
+                            }));
+                            const styledEdges = (draftEdges || []).map((edge: any) => ({
+                                ...edge,
+                                style: { strokeWidth: 2, stroke: '#b1b1b7' },
+                                markerEnd: { type: MarkerType.ArrowClosed, color: '#b1b1b7' }
+                            }));
+                            setNodes(nodesWithHandlers);
+                            setEdges(styledEdges);
+                            isDirty.current = true;
+                            draftCheckResolved.current = true;
+                            message.success(intl.formatMessage({ id: 'pages.editor.restoreSuccess', defaultMessage: 'Restored from local draft' }));
+                        },
+                        onCancel: () => {
+                            localStorage.removeItem(storageKey);
+                            draftCheckResolved.current = true;
+                            message.info(intl.formatMessage({ id: 'pages.editor.draftDiscarded', defaultMessage: 'Local draft discarded' }));
+                        }
+                    });
+                } catch (e) {
+                    console.error('Failed to parse draft', e);
+                    draftCheckResolved.current = true;
+                }
+            } else {
+                draftCheckResolved.current = true;
+            }
+        };
+
+        // Delay slightly to ensure graph is loaded first? 
+        // Actually this runs when packageData is available.
+        // We should probably run this ONLY ONCE per package load.
+        // But packageData might update on save.
+        // Let's rely on packageId change effectively.
+        checkDraft();
+
+    }, [packageId, packageData]); // Run when package data loaded 
     // We removed setNodes, setEdges, reactFlowInstance, handlers from deps to prevent loop.
     // Ideally setNodes/setEdges/reactFlowInstance are stable.
     // Handlers might change if intl changes, but intl usually stable.
@@ -308,6 +449,7 @@ const EditorContent = () => {
             style: { strokeWidth: 2, stroke },
             markerEnd: { type: MarkerType.ArrowClosed, color: stroke }
         }, eds));
+        isDirty.current = true;
     }, [setEdges, reactFlowInstance, takeSnapshot, nodes, edges, intl]);
 
     const getGraphData = () => {
@@ -333,7 +475,7 @@ const EditorContent = () => {
                 id: n.id,
                 type: n.type,
                 data: n.data,
-                position: { x: 0, y: 0 }
+                position: n.position
             })),
             edges: sortedEdges.map(e => ({
                 id: e.id,
@@ -355,6 +497,14 @@ const EditorContent = () => {
                 graphData
             });
             message.success(intl.formatMessage({ id: 'pages.editor.saveSuccess' }));
+            // Clear local draft on save
+            localStorage.removeItem(`srule_draft_${packageId}`);
+            isDirty.current = false;
+            // Update package data to reflect new update time (optimistic or fetch)
+            const res = await getPackages({ code: packageCode });
+            if (res.data && res.data.length > 0) {
+                setPackageData(res.data[0]);
+            }
         } catch (e) {
             message.error(intl.formatMessage({ id: 'pages.editor.saveFailed' }));
         }
@@ -437,6 +587,7 @@ const EditorContent = () => {
                 takeSnapshot(reactFlowInstance.getNodes(), reactFlowInstance.getEdges());
             }
         }
+        isDirty.current = true;
         onNodesChange(changes);
     }, [onNodesChange, takeSnapshot, reactFlowInstance]);
 
@@ -446,6 +597,7 @@ const EditorContent = () => {
                 takeSnapshot(reactFlowInstance.getNodes(), reactFlowInstance.getEdges());
             }
         }
+        isDirty.current = true;
         onEdgesChange(changes);
     }, [onEdgesChange, takeSnapshot, reactFlowInstance]);
 
@@ -479,7 +631,7 @@ const EditorContent = () => {
         onUndo,
         onRedo,
         onDelete: (id) => onMenuClick('delete', id),
-        setNodes
+        setNodes: setNodesDirty
     });
 
     // Drag and Drop
@@ -621,6 +773,30 @@ const EditorContent = () => {
                         hasSelection={nodes.some(n => n.selected)}
                         hasCopiedContent={!!copiedSubgraph}
                     />
+                    {saveStatus && (
+                        <div style={{
+                            position: 'fixed',
+                            top: 80,
+                            left: '50%',
+                            transform: 'translateX(-50%)',
+                            padding: '6px 12px',
+                            background: 'rgba(255, 255, 255, 0.9)',
+                            color: '#52c41a',
+                            borderRadius: 16,
+                            fontSize: 12,
+                            boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+                            zIndex: 2000,
+                            pointerEvents: 'none',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 6,
+                            backdropFilter: 'blur(4px)',
+                            border: '1px solid rgba(82, 196, 26, 0.2)'
+                        }}>
+                            <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#52c41a' }} />
+                            {saveStatus}
+                        </div>
+                    )}
                 </ReactFlow>
             </div>
             {packageId && (

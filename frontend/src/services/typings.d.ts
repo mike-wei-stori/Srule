@@ -64,8 +64,10 @@ declare namespace API {
     activeVersionId?: number;
     version?: string;
     extensionData?: string; // JSON string
-    createTime: string;
-    updateTime: string;
+    createTime?: string;
+    updateTime?: string;
+    createdAt?: string;
+    updatedAt?: string;
   }
 
   interface RulePackageVersion {

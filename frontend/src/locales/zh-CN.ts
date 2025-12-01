@@ -213,6 +213,16 @@ export default {
     'pages.editor.node.decisionTable.addBranch': '添加分支',
     'pages.editor.node.decisionTable.condition': '条件',
     'pages.editor.node.decisionTable.expression': '表达式',
+    'pages.editor.savedLocally': '已保存到本地',
+    'pages.editor.draftFound': '发现本地草稿',
+    'pages.editor.draftFoundDesc': '发现一个未保存的本地草稿。您想要恢复它吗？',
+    'pages.editor.draftTime': '草稿时间',
+    'pages.editor.serverTime': '服务端时间',
+    'pages.editor.restoreDraftConfirm': '您有未保存的本地更改。是否要恢复？',
+    'pages.editor.restore': '恢复',
+    'pages.editor.discard': '丢弃',
+    'pages.editor.restoreSuccess': '已从本地草稿恢复',
+    'pages.editor.draftDiscarded': '本地草稿已丢弃',
 
     // Profile
     'pages.profile.userInfo': '用户信息',
