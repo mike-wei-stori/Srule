@@ -158,7 +158,8 @@ public class ActionNodeConverter extends AbstractNodeConverter {
 
     private void generateListAction(StringBuilder drl, String target, String op, String valueExpr, Object originalValue) {
         // Handle List Builder Assignment (List<String>)
-        if ("=".equals(op) && originalValue instanceof List && !isReference((String) originalValue)) { 
+        // Fix: 检查 originalValue 是否为 List 类型，而不是尝试将其转换为 String
+        if ("=".equals(op) && originalValue instanceof List) { 
              List<?> list = (List<?>) originalValue;
              StringBuilder sb = new StringBuilder();
              sb.append("new java.util.ArrayList(java.util.Arrays.asList(");

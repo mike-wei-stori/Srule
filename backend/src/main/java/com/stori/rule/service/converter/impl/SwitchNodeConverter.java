@@ -86,13 +86,16 @@ public class SwitchNodeConverter extends AbstractNodeConverter {
         String rhs = value;
         
         if ("INTEGER".equalsIgnoreCase(type) || "DOUBLE".equalsIgnoreCase(type) || "NUMBER".equalsIgnoreCase(type)) {
-            lhs = "((Number)" + lhs + ").doubleValue()";
+            // Fix: 添加空值检查，避免 NullPointerException
+            String nullCheck = lhs + " != null";
+            String numLhs = "((Number)" + lhs + ").doubleValue()";
             // Ensure rhs is a number
             try {
                 Double.parseDouble(rhs);
             } catch (NumberFormatException e) {
                 rhs = "0"; // Fallback
             }
+            return nullCheck + " && " + numLhs + " " + operator + " " + rhs;
         } else {
             // String comparison
             rhs = "\"" + rhs.replace("\"", "") + "\"";
@@ -102,7 +105,5 @@ public class SwitchNodeConverter extends AbstractNodeConverter {
                 return "!java.util.Objects.equals(" + lhs + ", " + rhs + ")";
             }
         }
-        
-        return lhs + " " + operator + " " + rhs;
     }
 }

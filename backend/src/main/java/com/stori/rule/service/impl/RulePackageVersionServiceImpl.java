@@ -97,18 +97,26 @@ public class RulePackageVersionServiceImpl extends ServiceImpl<RulePackageVersio
         if (definition != null) {
             // Update the content_json with the version snapshot
             definition.setContentJson(version.getContentJson());
-            // Restore DRL content from snapshot if available
+            
+            // Fix: 从快照中恢复 DRL 内容
             if (version.getSnapshotData() != null) {
                 PackageSnapshot snapshot = JSON.parseObject(version.getSnapshotData(), PackageSnapshot.class);
                 if (snapshot.getRuleDefinitions() != null && !snapshot.getRuleDefinitions().isEmpty()) {
-                    // Assuming 1:1 mapping or taking the first one for now as logic seems to imply single definition per package mostly?
-                    // But selectByPackageId returns List. 
-                    // Let's assume we overwrite based on content match or just update the main definition.
-                    // Simplified: Just update content_json for editor, user needs to re-save/generate DRL or we trust editor to rebuild.
-                    // Ideally we should restore DRL too.
-                    // For now, let's stick to existing logic for contentJson restoration.
+                    // 从快照中获取对应的 DRL 内容
+                    for (RuleDefinition snapshotDef : snapshot.getRuleDefinitions()) {
+                        if (snapshotDef.getPackageId().equals(packageId) || 
+                            (snapshotDef.getName() != null && snapshotDef.getName().equals(definition.getName()))) {
+                            definition.setDrlContent(snapshotDef.getDrlContent());
+                            break;
+                        }
+                    }
+                    // 如果没有找到匹配的，使用第一个的 DRL
+                    if (definition.getDrlContent() == null && !snapshot.getRuleDefinitions().isEmpty()) {
+                        definition.setDrlContent(snapshot.getRuleDefinitions().get(0).getDrlContent());
+                    }
                 }
             }
+            
             ruleDefinitionMapper.updateById(definition);
         }
     }

@@ -138,7 +138,6 @@ public class DecisionNodeConverter extends AbstractNodeConverter {
             }
         } else {
             // Re-use generateSingleCondition logic but adapted for legacy structure
-            // Or just keep legacy logic as is
             String parameter = (String) data.get("parameter");
             String operator = (String) data.getOrDefault("operator", "==");
             Object value = data.get("value");
@@ -149,6 +148,7 @@ public class DecisionNodeConverter extends AbstractNodeConverter {
                 }
                 
                 Map<String, Object> tempCond = new java.util.HashMap<>();
+                tempCond.put("parameter", parameter); // Fix: 添加缺失的 parameter 字段
                 tempCond.put("operator", operator);
                 tempCond.put("value", value);
                 

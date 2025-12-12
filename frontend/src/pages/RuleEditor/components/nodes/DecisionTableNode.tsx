@@ -178,6 +178,20 @@ const DecisionTableNode = (props: NodeProps) => {
                 >
                     {intl.formatMessage({ id: 'pages.editor.node.decisionTable.addBranch', defaultMessage: 'Add Branch' })}
                 </Button>
+
+                {/* Default 分支 */}
+                <div style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: 4, marginTop: 4, paddingTop: 4, borderTop: '1px dashed #eee' }}>
+                    <Text style={{ fontSize: 10, color: '#888' }}>{intl.formatMessage({ id: 'pages.editor.node.decisionTable.default', defaultMessage: 'Default (其他情况)' })}</Text>
+                    <div style={{ position: 'absolute', right: -16, top: '50%', transform: 'translateY(-50%)' }}>
+                        <Handle
+                            type="source"
+                            position={Position.Right}
+                            id="default"
+                            className="custom-node-handle"
+                            style={{ background: '#8c8c8c' }}
+                        />
+                    </div>
+                </div>
             </Space>
         </BaseNode>
     );
